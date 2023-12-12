@@ -4,7 +4,7 @@ defaults:
   - override /datamodule: high_sierras.yaml
   - override /module: multilabel.yaml
   - override /callbacks: default.yaml 
-  - override /trainer: single_gpu.yaml
+  - override /trainer: mps_accelerator.yaml
 
 
 tags: ["hsn", "ast", "multilabel"]
@@ -23,14 +23,14 @@ datamodule:
     val_split: 0.2
   loaders:
     train:
-      batch_size: 12
+      batch_size: 1
     valid:
-      batch_size: 12
+      batch_size: 1
     test:
-      batch_size: 12
+      batch_size: 1
 
 logger:
   wandb:
     tags: ${tags}
     group: "hsn"
-    mode: online
+    mode: offline
