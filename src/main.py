@@ -25,7 +25,7 @@ def main(cfg):
     # Setup data
     log.info(f"Instantiate datamodule <{cfg.datamodule._target_}>")
     datamodule = hydra.utils.instantiate(cfg.datamodule)
-    datamodule.prepare_data()
+    datamodule.prepare_data() # has to be called before model for len_traindataset!
 
     # Setup logger
     log.info(f"Instantiate logger")
@@ -47,6 +47,7 @@ def main(cfg):
         cfg.module,
         num_epochs=cfg.trainer.max_epochs,
         len_trainset=datamodule.len_trainset,
+        label_counts=datamodule.num_train_labels,
         _recursive_=False # manually instantiate!
     )
 
