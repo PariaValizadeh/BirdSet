@@ -267,6 +267,9 @@ class EmbedFn(beam.DoFn):
   def _audio_to_example(
       self, file_id: str, timestamp_offset_s: float, audio: np.ndarray
   ):
+    return self._audio_to_example_slim(audio)
+  
+  def _audio_to_example_slim(self, audio: np.ndarray):
     if self.embedding_model is None:
       raise ValueError(
           'Embedding model undefined; you must run setup to load the model.'
