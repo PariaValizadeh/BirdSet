@@ -153,11 +153,11 @@ class TransformsWrapper:
 
         # extract/pad/truncate
         # max_length determains the difference with input waveforms as factor 5 (embedding)
-        max_length = int(int(self.sampling_rate) * int(self.max_length))
+        max_length = int(int(self.sampling_rate) * int(self.max_length)) #!TODO: how to determine 5s
         waveform_batch = self.feature_extractor(
             waveform_batch,
             padding="max_length",
-            max_length=max_length, #!TODO: how to determine 5s
+            max_length=max_length, 
             truncation=True,
             return_attention_mask=True
         )
