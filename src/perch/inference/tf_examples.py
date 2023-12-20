@@ -169,6 +169,7 @@ def model_outputs_to_tf_example(
         serialize_tensor(tf.constant(audio, dtype=tf.float32))
     )
     feature[RAW_AUDIO_SHAPE] = int_feature(audio.shape)
+  print(type(feature))
   ex = tf.train.Example(features=tf.train.Features(feature=feature))
   return ex
 

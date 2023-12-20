@@ -29,6 +29,7 @@ from src.perch import path_utils
 from src.perch.inference import interface
 from src.perch.inference import models
 from src.perch.inference import tf_examples
+from src.perch.inference import torch_examples
 from etils import epath
 from ml_collections import config_dict
 import numpy as np
@@ -40,20 +41,44 @@ INFERENCE_CONFIGS_PKG = 'chirp.inference.configs.'
 
 
 @dataclasses.dataclass
-class SourceInfo:
-  """Source information for extracting target audio from a file."""
-
-  filepath: str
-  shard_num: int
-  shard_len_s: float
-
+class FileId:
   def file_id(self, file_id_depth: int) -> str:
     file_id = epath.Path(
         *epath.Path(self.filepath).parts[-(file_id_depth + 1) :]
     ).as_posix()
     return file_id
 
+@dataclasses.dataclass
+class BaseSourceInfo(FileId):
+  filepath: str
+  id: int
 
+@dataclasses.dataclass
+class SourceInfo(BaseSourceInfo):
+  """Source information for extracting target audio from a file."""
+
+  filepath: str
+  shard_num: int
+  shard_len_s: float
+  
+  def __init__(self, filepath, shard_num, shard_len_s):
+    self.filepath = filepath
+    self.shard_num = shard_num
+    self.shard_len_s = shard_len_s
+    self.id = self.shard_num
+
+@dataclasses.dataclass
+class NewSourceInfo(FileId):
+  """New Source Information"""
+  filepath:str
+  start_time: int
+  end_time: int
+  
+  def __init__(self, filepath, start_time, end_time):
+    self.filepath = filepath
+    self.start_time = start_time
+    self.end_time = end_time
+    self.id = self.start_time
 @dataclasses.dataclass(frozen=True)
 class SourceId:
   """Source information identifier."""
@@ -73,7 +98,9 @@ def create_source_infos(
   # TODO(tomdenton): probe each file and create work units in a new Beam stage.
   source_files = []
   for pattern in source_file_patterns:
-    for source_file in epath.Path('').glob(pattern):
+    paths = epath.Path('').glob(pattern)
+    for source_file in paths:
+      print(source_file)
       source_files.append(source_file)
 
   source_file_splits = []
@@ -213,15 +240,33 @@ class EmbedFn(beam.DoFn):
         'The audio at (%s / %d) could not be loaded (%s). '
         'The exception was (%s)',
         source_info.filepath,
-        source_info.shard_num,
+        source_info.id,
         counter_name,
         exception,
     )
 
-  def audio_to_example(
+  def audio_to_example_tf(
       self, file_id: str, timestamp_offset_s: float, audio: np.ndarray
   ) -> tf.train.Example:
     """Embed audio and create a TFExample."""
+    
+    write_logits, model_outputs = self._audio_to_example(file_id, timestamp_offset_s, audio)
+
+    example = tf_examples.model_outputs_to_tf_example(
+        model_outputs=model_outputs,
+        file_id=file_id,
+        audio=audio,
+        timestamp_offset_s=timestamp_offset_s,
+        write_raw_audio=self.write_raw_audio,
+        write_separated_audio=self.write_separated_audio,
+        write_embeddings=self.write_embeddings,
+        write_logits=write_logits,
+    )
+    return example
+  
+  def _audio_to_example(
+      self, file_id: str, timestamp_offset_s: float, audio: np.ndarray
+  ):
     if self.embedding_model is None:
       raise ValueError(
           'Embedding model undefined; you must run setup to load the model.'
@@ -235,8 +280,15 @@ class EmbedFn(beam.DoFn):
       write_logits = True
     else:
       write_logits = self.write_logits
-
-    example = tf_examples.model_outputs_to_tf_example(
+    
+    return write_logits, model_outputs
+  
+  def audio_to_example_pt(
+      self, file_id: str, timestamp_offset_s: float, audio: np.ndarray
+  ):
+    write_logits, model_outputs = self._audio_to_example(file_id, timestamp_offset_s, audio)
+    
+    example = torch_examples.model_outputs_to_tf_example(
         model_outputs=model_outputs,
         file_id=file_id,
         audio=audio,
@@ -246,7 +298,22 @@ class EmbedFn(beam.DoFn):
         write_embeddings=self.write_embeddings,
         write_logits=write_logits,
     )
+    
     return example
+    
+    
+  
+  @beam.typehints.with_output_types(Any)
+  def process_new_SourceInfo(self, source_info:NewSourceInfo, crop_s: float = -1.0):
+    window_size_s = source_info.end_time
+    timestamp_offset_s = source_info.start_time
+    
+    if crop_s > 0:
+      window_size_s = crop_s
+    elif self.crop_s > 0:
+      window_size_s = self.crop_s
+    
+    return self._process(source_info, timestamp_offset_s, window_size_s, False)
 
   @beam.typehints.with_output_types(Any)
   def process(self, source_info: SourceInfo, crop_s: float = -1.0):
@@ -260,11 +327,9 @@ class EmbedFn(beam.DoFn):
     Returns:
       A TFExample.
     """
-    file_id = source_info.file_id(self.file_id_depth)
-
-    logging.info('...loading audio (%s)', source_info.filepath)
     timestamp_offset_s = source_info.shard_num * source_info.shard_len_s
 
+    
     if crop_s > 0:
       window_size_s = crop_s
     elif self.crop_s > 0:
@@ -273,6 +338,14 @@ class EmbedFn(beam.DoFn):
       window_size_s = source_info.shard_len_s
     else:
       window_size_s = -1
+    
+    return self._process(source_info, timestamp_offset_s, window_size_s, True)
+    
+  def _process(self, source_info:BaseSourceInfo, timestamp_offset_s, window_size_s, is_tf):
+    file_id = source_info.file_id(self.file_id_depth)
+
+    logging.info('...loading audio (%s)', source_info.filepath)
+
 
     try:
       audio = self.load_audio(
@@ -307,7 +380,13 @@ class EmbedFn(beam.DoFn):
     logging.info(
         '...creating embeddings (%s / %d)', file_id, timestamp_offset_s
     )
-    example = self.audio_to_example(file_id, timestamp_offset_s, audio)
+    
+    if is_tf:
+      logging.info(f"Creating example for tf")
+      example = self.audio_to_example_tf(file_id, timestamp_offset_s, audio)
+    else:
+      logging.info(f"Creating example for pytorch")
+      example = self.audio_to_example_pt(file_id, timestamp_offset_s, audio)
     beam.metrics.Metrics.counter('beaminference', 'examples_processed').inc()
     return [example]
 
