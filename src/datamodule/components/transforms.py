@@ -23,6 +23,7 @@ class PreprocessingConfig:
     target_height: int | None = None
     target_width: int | None = 1024
     normalize: bool = True
+    normalize_waveform:str = "instance_min_max"
 
 class TransformsWrapper:
     """
