@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Literal
+from typing import Any, Dict, Literal
 
 import numpy as np
 from omegaconf import DictConfig
@@ -25,7 +25,109 @@ class PreprocessingConfig:
     normalize: bool = True
     normalize_waveform:str = "instance_min_max"
 
-class TransformsWrapper:
+class BatchTransformer:
+    """
+    Base class to handle audio transformations for different model types and modes.
+
+    Attributes:
+        mode (str): The mode in which the class is operating. Can be "train", "valid", "test", or "predict".
+        sampling_rate (int): The sampling rate of the audio data.
+        max_length (int): Maximum segment lenght in seconds
+        decoding (EventDecoding): Detecting events in sample (EventDecoding if None given)
+        feature_extractor (DefaultFeatureExtractor): Configuration for extracting events from the audio data (DefaultFeatureExtractor id None given)
+    """
+    
+    def __init__(self, 
+                 task: str = "multiclass", 
+                 sampling_rate:int = 3200, 
+                 max_length:int = 5, 
+                 decoding: EventDecoding | None = None,
+                 feature_extractor : DefaultFeatureExtractor | None = None) -> None:
+        self.mode = "train"
+        self.task = task
+        self.sampling_rate = sampling_rate
+        self.max_length = max_length
+        self.event_decoding = decoding
+        if self.event_decoding is None:
+            self.event_decoding = EventDecoding(min_len=0,
+                                          max_len=self.max_length,
+                                          sampling_rate=self.sampling_rate)
+        self.feature_extractor = feature_extractor
+        if self.feature_extractor is None:
+            self.feature_extractor = DefaultFeatureExtractor(feature_size=1,
+                                                             sampling_rate=self.sampling_rate,
+                                                             padding_value=0.0,
+                                                             return_attention_mask=False)
+    
+    def _transform(self, batch):
+        """
+        Called when tansformer is called
+        Applies transformations to a batch of data.
+        
+        1. Applies Event Decoding (almost always)
+        2. Applies feature extraction with FeatureExtractor
+        """
+        # we overwrite the feature extractor with None because we can do this here manually 
+        # this is quite complicated if we want to make adjustments to non bird methods
+        if self.event_decoding is not None: 
+            batch = self.event_decoding(batch)
+
+        #----
+        # Feature extractor
+        #----
+        
+        if not "audio" in batch.keys():
+            raise ValueError(f"There is no audio in batch {batch.keys()}")
+        
+        # audio collating and padding
+        waveform_batch = [audio["array"] for audio in batch["audio"]]
+
+        # extract/pad/truncate
+        # max_length determains the difference with input waveforms as factor 5 (embedding)
+        max_length = int(int(self.sampling_rate) * int(self.max_length)) #!TODO: how to determine 5s
+        waveform_batch = self.feature_extractor(
+            waveform_batch,
+            padding="max_length",
+            max_length=max_length, 
+            truncation=True,
+            return_attention_mask=True
+        )
+        # print(batch)
+        
+        attention_mask = waveform_batch["attention_mask"]
+        # i dont know why it was unsqueezed earlier, but this solves the problem of dimensionality (is now the same, if you augment further or not...)
+        # waveform_batch = waveform_batch["input_values"].unsqueeze(1)
+        waveform_batch = waveform_batch["input_values"]
+        
+        audio_augmented = self.augment_waveform_batch(waveform_batch, attention_mask)
+        
+        if self.task == "multiclass":
+            labels = batch["labels"]
+        
+        else:
+            # self.task == "multilabel"
+            # datatype of labels must be float32 to support BCEWithLogitsLoss
+            labels = torch.tensor(batch["labels"], dtype=torch.float32)
+
+        return {"input_values": audio_augmented, "labels": labels}
+    
+    def augment_waveform_batch(self, waveform_batch, attention_mask):
+        """
+        Do your augmentations in derived class here
+        """
+        
+        return waveform_batch
+    
+    def set_mode(self, mode):
+        self.mode = mode
+    
+    
+    def __call__(self, batch, **kwargs):
+        batch = self._transform(batch)
+
+        return batch
+
+class TransformsWrapper(BatchTransformer):
     """
     A class to handle audio transformations for different model types and modes.
 
@@ -49,8 +151,7 @@ class TransformsWrapper:
                 waveform_augmentations: DictConfig = DictConfig({}), # TODO: typing is wrong, can also be List of Augmentations
                 decoding: EventDecoding | None = None,
                 feature_extractor: DefaultFeatureExtractor = DefaultFeatureExtractor()
-            ):
-
+            ):        
         self.mode = "train"
         self.feature_extractor = feature_extractor
         self.task = task
@@ -66,7 +167,7 @@ class TransformsWrapper:
             use_spectrogram=self.preprocessing.use_spectrogram,
             db_scale=self.preprocessing.db_scale
         )
-        self.event_decoder = decoding
+        self.event_decoding = decoding
         self.max_length = max_length
 
         if self.mode == "train":
@@ -92,9 +193,6 @@ class TransformsWrapper:
         elif self.mode in ("valid", "test", "predict"):
             self.wave_aug = None
             self.spec_aug = None
-        
-    def set_mode(self, mode):
-        self.mode = mode
 
     def _spectrogram_conversion(self, waveform):
         """
@@ -127,44 +225,16 @@ class TransformsWrapper:
         spectrograms = [spectrogram_transform(waveform) for waveform in waveform]
 
         return spectrograms
-
-    def _transform_function(self, batch):
+    
+    def augment_waveform_batch(self, waveform_batch, attention_mask):
         """
-        Applies transformations to a batch of data.
-        1. Applies Event Decoding if specified / needed
-        2. Applies feature extraction with FeatureExtractor
-        3. Applies augmentations to waveform
-        4. Applies conversions to spectrogram and augmentations to spectrogram if task is vision
-        5. Convert labels type to float32 if task is multilabel
-
+        1. Applies augmentations to waveform
+        2. Applies conversions to spectrogram and augmentations to spectrogram if task is vision
+        3. Convert labels type to float32 if task is multilabel
         """
-
-        # we overwrite the feature extractor with None because we can do this here manually 
-        # this is quite complicated if we want to make adjustments to non bird methods
-        if self.event_decoder is not None: 
-            batch = self.event_decoder(batch)
-
-        #----
-        # Feature extractor
-        #----
-
-        # audio collating and padding
-        waveform_batch = [audio["array"] for audio in batch["audio"]]
-
-        # extract/pad/truncate
-        # max_length determains the difference with input waveforms as factor 5 (embedding)
-        max_length = int(int(self.sampling_rate) * int(self.max_length)) #!TODO: how to determine 5s
-        waveform_batch = self.feature_extractor(
-            waveform_batch,
-            padding="max_length",
-            max_length=max_length, 
-            truncation=True,
-            return_attention_mask=True
-        )
         
-        attention_mask = waveform_batch["attention_mask"]
-        waveform_batch = waveform_batch["input_values"].unsqueeze(1)
-
+        waveform_batch = waveform_batch.unsqueeze(1)
+        
         if self.wave_aug is not None:
             audio_augmented = self.wave_aug(
                 samples=waveform_batch, sample_rate=self.sampling_rate
@@ -191,16 +261,8 @@ class TransformsWrapper:
         if self.model_type == "vision":
             # spectrogram conversion and augmentation 
             audio_augmented = self._vision_augmentations(audio_augmented)
-            
-        if self.task == "multiclass":
-            labels = batch["labels"]
         
-        else:
-            # self.task == "multilabel"
-            # datatype of labels must be float32 to support BCEWithLogitsLoss
-            labels = torch.tensor(batch["labels"], dtype=torch.float32)
-
-        return {"input_values": audio_augmented, "labels": labels}
+        return audio_augmented
     
     def _zero_mean_unit_var_norm(
             self, input_values, attention_mask, padding_value=0.0
@@ -255,8 +317,7 @@ class TransformsWrapper:
                 
                 normed_input_values.append(normed_vector)
         return torch.stack(normed_input_values)
-
-        
+           
     def _vision_augmentations(self, audio_augmented):
         spectrograms = self._spectrogram_conversion(audio_augmented)
         spectrograms_augmented = [self.spec_aug(spectrogram) for spectrogram in spectrograms]
@@ -283,8 +344,3 @@ class TransformsWrapper:
         if self.preprocessing.normalize:
             audio_augmented = (audio_augmented - (-4.268)) / (4.569 * 2)
         return audio_augmented
-
-    def __call__(self, batch, **kwargs):
-        batch = self._transform_function(batch)
-
-        return batch

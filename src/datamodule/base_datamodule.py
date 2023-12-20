@@ -9,7 +9,7 @@ import lightning as L
 
 from datasets import load_dataset, load_from_disk, Audio, DatasetDict, Dataset, IterableDataset, IterableDatasetDict
 from torch.utils.data import DataLoader
-from src.datamodule.components.transforms import TransformsWrapper
+from src.datamodule.components.transforms import BatchTransformer
 
 @dataclass
 class DatasetConfig:
@@ -66,7 +66,7 @@ class BaseDataModuleHF(L.LightningDataModule):
         mapper,
         dataset: DatasetConfig = DatasetConfig(),
         loaders: LoadersConfig = LoadersConfig(),
-        transforms: TransformsWrapper = TransformsWrapper(),
+        transforms: BatchTransformer = BatchTransformer(),
         ):
         super().__init__()
         self.dataset_config = dataset
