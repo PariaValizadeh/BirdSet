@@ -43,6 +43,7 @@ class TransformsWrapper:
                 task: str = "multiclass",
                 sampling_rate: int = 32000,
                 model_type: Literal['vision', 'waveform'] = "waveform",
+                max_length:int = 5,
                 preprocessing: PreprocessingConfig = PreprocessingConfig(),
                 spectrogram_augmentations: DictConfig = DictConfig({}), # TODO: typing is wrong, can also be List of Augmentations
                 waveform_augmentations: DictConfig = DictConfig({}), # TODO: typing is wrong, can also be List of Augmentations
@@ -66,6 +67,7 @@ class TransformsWrapper:
             db_scale=self.preprocessing.db_scale
         )
         self.event_decoder = decoding
+        self.max_length = max_length
 
         if self.mode == "train":
             # waveform augmentations
@@ -150,10 +152,12 @@ class TransformsWrapper:
         waveform_batch = [audio["array"] for audio in batch["audio"]]
 
         # extract/pad/truncate
+        # max_length determains the difference with input waveforms as factor 5 (embedding)
+        max_length = int(int(self.sampling_rate) * int(self.max_length))
         waveform_batch = self.feature_extractor(
             waveform_batch,
             padding="max_length",
-            max_length=self.sampling_rate*5, #!TODO: how to determine 5s
+            max_length=max_length, #!TODO: how to determine 5s
             truncation=True,
             return_attention_mask=True
         )
