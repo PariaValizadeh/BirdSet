@@ -601,6 +601,8 @@ class TFHubModel(interface.EmbeddingModel):
   model_url: str
   embedding_index: int
   logits_index: int = -1
+  window_size_s: float | None = None
+
 
   @classmethod
   def from_config(cls, config: config_dict.ConfigDict) -> 'TFHubModel':
@@ -609,26 +611,36 @@ class TFHubModel(interface.EmbeddingModel):
         model=model,
         **config,
     )
-
+  
   @classmethod
-  def yamnet(cls):
-    # Parent class takes a sample_rate arg which pylint doesn't find.
+  def yamnet_cfg(cls):
     config = config_dict.ConfigDict({
         'sample_rate': 16000,
         'model_url': 'https://tfhub.dev/google/yamnet/1',
         'embedding_index': 1,
         'logits_index': 0,
     })
-    return TFHubModel.from_config(config)
-
+    return config
+  
   @classmethod
-  def vggish(cls):
+  def yamnet(cls):
+    # Parent class takes a sample_rate arg which pylint doesn't find.
+    config = TFHubModel.yamnet_cfg()
+    return TFHubModel.from_config(config)
+  
+  @classmethod
+  def vggish_cfg(cls):
     config = config_dict.ConfigDict({
         'sample_rate': 16000,
         'model_url': 'https://tfhub.dev/google/vggish/1',
         'embedding_index': -1,
         'logits_index': -1,
     })
+    return config
+  
+  @classmethod
+  def vggish(cls):
+    config = TFHubModel.vggish_cfg()
     return TFHubModel.from_config(config)
 
   def embed(
