@@ -259,6 +259,8 @@ class TaxonomyModelTF(interface.EmbeddingModel):
   batchable: bool
   target_peak: float | None = 0.25
   tfhub_version: int | None = None
+  num_classes:int |None = None
+  embed_dim:int |None = None
 
   @classmethod
   def is_batchable(cls, model: Any) -> bool:
@@ -455,6 +457,8 @@ class BirdNet(interface.EmbeddingModel):
   hop_size_s: float = 3.0
   num_tflite_threads: int = 16
   class_list_name: str = 'birdnet_v2_1'
+  num_classes:int |None = None
+  embed_dim:int |None = None
 
   @classmethod
   def from_config(cls, config: config_dict.ConfigDict) -> 'BirdNet':
@@ -602,6 +606,9 @@ class TFHubModel(interface.EmbeddingModel):
   embedding_index: int
   logits_index: int = -1
   window_size_s: float | None = None
+  hop_size_s:float | None = None
+  num_classes:int |None = None
+  embed_dim:int |None = None
 
 
   @classmethod
