@@ -5,6 +5,9 @@ import numpy as np
 from omegaconf import DictConfig
 from src.datamodule.components.feature_extraction import DefaultFeatureExtractor
 from src.datamodule.components.event_decoding import EventDecoding
+from src.datamodule.components.augmentations import BackgroundNoise
+from src.datamodule.components.augmentations import Compose
+
 import torch
 
 from src.datamodule.components.resize import Resizer
@@ -22,8 +25,8 @@ class PreprocessingConfig:
     db_scale: bool = True
     target_height: int | None = None
     target_width: int | None = 1024
-    normalize: bool = True
-    normalize_waveform:str = "instance_min_max"
+    normalize_spectorgram: bool = True
+    normalize_waveform: Literal['instance_normalization', 'instance_min_max'] | None  = None
 
 class BatchTransformer:
     """
@@ -170,16 +173,19 @@ class TransformsWrapper(BatchTransformer):
         self.event_decoding = decoding
         self.max_length = max_length
 
-        if self.mode == "train":
-            # waveform augmentations
-            wave_aug = []
-            for wave_aug_name in self.waveform_augmentations:
-                aug = self.waveform_augmentations.get(wave_aug_name)
-                wave_aug.append(aug)
+        # waveform augmentations
+        wave_aug = []
+        for wave_aug_name in waveform_augmentations:
+            aug = self.waveform_augmentations.get(wave_aug_name)
+            wave_aug.append(aug)
 
-            self.wave_aug = torch_audiomentations.Compose(
-                transforms=wave_aug,
-                output_type="tensor")
+        self.wave_aug = torch_audiomentations.Compose(
+            transforms=wave_aug,
+            output_type="tensor")
+        
+        # self.wave_aug_background = Compose(
+        #     transforms=[BackgroundNoise(p=0.5)]
+        # )
 
             # spectrogram augmentations
             spec_aug = []
@@ -242,6 +248,12 @@ class TransformsWrapper(BatchTransformer):
         else:
             audio_augmented = waveform_batch
         
+        # shape: batch x 1 x sample_rate
+        if self.background_noise:
+            noise_events = {key: batch[key] for key in ["filepath", "no_call_events"]}
+            self.background_noise.noise_events = noise_events
+            audio_augmented = self.background_noise(audio_augmented)
+                
         if self.model_type == "waveform":
             #TODO vectorize this
             if self.preprocessing.normalize_waveform == "instance_normalization":
@@ -255,8 +267,6 @@ class TransformsWrapper(BatchTransformer):
                     input_values=audio_augmented,
                     attention_mask=attention_mask
                 )
-                #RuntimeError: min(): Expected reduction dim to be specified for input.numel() == 0. Specify the reduction dim with the 'dim' argument.
-                # in test data: there seems to be an empty tensor with length=0? and everathing is filtered out
 
         if self.model_type == "vision":
             # spectrogram conversion and augmentation 
@@ -320,7 +330,10 @@ class TransformsWrapper(BatchTransformer):
            
     def _vision_augmentations(self, audio_augmented):
         spectrograms = self._spectrogram_conversion(audio_augmented)
-        spectrograms_augmented = [self.spec_aug(spectrogram) for spectrogram in spectrograms]
+        if self.spec_aug is not None:
+            spectrograms_augmented = [self.spec_aug(spectrogram) for spectrogram in spectrograms]
+        else:
+            spectrograms_augmented = spectrograms
 
         if self.preprocessing.n_mels:
             melscale_transform = torchaudio.transforms.MelScale(
@@ -334,13 +347,18 @@ class TransformsWrapper(BatchTransformer):
             # list with 1 x 128 x 2026
             spectrograms_augmented = [spectrogram.numpy() for spectrogram in spectrograms_augmented]
             spectrograms_augmented = torch.from_numpy(librosa.power_to_db(spectrograms_augmented))
-        
-        audio_augmented = self.resizer.resize_spectrogram_batch(
+
+        resizer = Resizer(
+            use_spectrogram=self.preprocessing.use_spectrogram,
+            db_scale=self.preprocessing.db_scale
+        )
+
+        audio_augmented = resizer.resize_spectrogram_batch(
             spectrograms_augmented,
             target_height=self.preprocessing.target_height,
             target_width=self.preprocessing.target_width
         )
         # batch_size x 1 x height x width
-        if self.preprocessing.normalize:
+        if self.preprocessing.normalize_spectorgram:
             audio_augmented = (audio_augmented - (-4.268)) / (4.569 * 2)
         return audio_augmented

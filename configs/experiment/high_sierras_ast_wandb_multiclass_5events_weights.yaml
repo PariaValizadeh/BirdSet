@@ -2,13 +2,13 @@
 #package global is neccessary!
 defaults:
   - override /datamodule: high_sierras.yaml
-  - override /module: multilabel.yaml
+  - override /module: multiclass.yaml
   - override /module/network: ast.yaml
   - override /callbacks: default.yaml 
   - override /trainer: single_gpu.yaml
 
 
-tags: ["high_sierras", "ast", "augment"]
+tags: ["high_sierras", "ast", "multiclass"]
 seed: 2
 
 module:
@@ -41,12 +41,12 @@ datamodule:
   mapper: 
     event_limit: 5
     biggest_cluster: True
-    no_call: True
+    no_call: False
 
 logger:
   wandb:
     tags: ${tags}
-    group: "high_sierras_aug"
+    group: "high_sierras_aug_ast"
     mode: online
 
 
