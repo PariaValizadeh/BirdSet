@@ -50,9 +50,9 @@ class BatchTransformer:
         self.task = task
         self.sampling_rate = sampling_rate
         self.max_length = max_length
-        self.event_decoding = decoding
-        if self.event_decoding is None:
-            self.event_decoding = EventDecoding(min_len=0,
+        self.event_decoder = decoding
+        if self.event_decoder is None:
+            self.event_decoder = EventDecoding(min_len=0,
                                           max_len=self.max_length,
                                           sampling_rate=self.sampling_rate)
         self.feature_extractor = feature_extractor
@@ -72,8 +72,8 @@ class BatchTransformer:
         """
         # we overwrite the feature extractor with None because we can do this here manually 
         # this is quite complicated if we want to make adjustments to non bird methods
-        if self.event_decoding is not None: 
-            batch = self.event_decoding(batch)
+        if self.event_decoder is not None: 
+            batch = self.event_decoder(batch)
 
         #----
         # Feature extractor
@@ -102,7 +102,7 @@ class BatchTransformer:
         # waveform_batch = waveform_batch["input_values"].unsqueeze(1)
         waveform_batch = waveform_batch["input_values"]
         
-        audio_augmented = self.augment_waveform_batch(waveform_batch, attention_mask)
+        audio_augmented = self.augment_waveform_batch(waveform_batch, attention_mask, batch)
         
         if self.task == "multiclass":
             labels = batch["labels"]
@@ -114,7 +114,7 @@ class BatchTransformer:
 
         return {"input_values": audio_augmented, "labels": labels}
     
-    def augment_waveform_batch(self, waveform_batch, attention_mask):
+    def augment_waveform_batch(self, waveform_batch, attention_mask, batch):
         """
         Do your augmentations in derived class here
         """
@@ -124,8 +124,15 @@ class BatchTransformer:
     def set_mode(self, mode):
         self.mode = mode
     
+    def _prepare_call(self):
+        """
+        Overwrite this to prepare the call
+        """
+        return
+    
     
     def __call__(self, batch, **kwargs):
+        self._prepare_call()
         batch = self._transform(batch)
 
         return batch
@@ -148,30 +155,19 @@ class TransformsWrapper(BatchTransformer):
                 task: str = "multiclass",
                 sampling_rate: int = 32000,
                 model_type: Literal['vision', 'waveform'] = "waveform",
-                max_length:int = 5,
                 preprocessing: PreprocessingConfig = PreprocessingConfig(),
                 spectrogram_augmentations: DictConfig = DictConfig({}), # TODO: typing is wrong, can also be List of Augmentations
                 waveform_augmentations: DictConfig = DictConfig({}), # TODO: typing is wrong, can also be List of Augmentations
                 decoding: EventDecoding | None = None,
                 feature_extractor: DefaultFeatureExtractor = DefaultFeatureExtractor()
-            ):        
-        self.mode = "train"
-        self.feature_extractor = feature_extractor
-        self.task = task
-        self.sampling_rate = sampling_rate 
-        self.model_type = model_type
+            ):
+        max_length = 5
+        super().__init__(task, sampling_rate, max_length, decoding, feature_extractor)
 
+        self.model_type = model_type
         self.preprocessing = preprocessing
         self.waveform_augmentations = waveform_augmentations
         self.spectrogram_augmentations = spectrogram_augmentations
-        self.feature_extractor = feature_extractor
-
-        self.resizer = Resizer(
-            use_spectrogram=self.preprocessing.use_spectrogram,
-            db_scale=self.preprocessing.db_scale
-        )
-        self.event_decoding = decoding
-        self.max_length = max_length
 
         # waveform augmentations
         wave_aug = []
@@ -187,18 +183,16 @@ class TransformsWrapper(BatchTransformer):
         #     transforms=[BackgroundNoise(p=0.5)]
         # )
 
-            # spectrogram augmentations
-            spec_aug = []
-            for spec_aug_name in self.spectrogram_augmentations:
-                aug = self.spectrogram_augmentations.get(spec_aug_name)
-                spec_aug.append(aug)
-            
-            self.spec_aug = torchvision.transforms.Compose(
-                transforms=spec_aug)
-            
-        elif self.mode in ("valid", "test", "predict"):
-            self.wave_aug = None
-            self.spec_aug = None
+        self.background_noise = BackgroundNoise(p=0.5)
+
+        # spectrogram augmentations
+        spec_aug = []
+        for spec_aug_name in self.spectrogram_augmentations:
+            aug = self.spectrogram_augmentations.get(spec_aug_name)
+            spec_aug.append(aug)
+        
+        self.spec_aug = torchvision.transforms.Compose(
+            transforms=spec_aug)
 
     def _spectrogram_conversion(self, waveform):
         """
@@ -231,8 +225,8 @@ class TransformsWrapper(BatchTransformer):
         spectrograms = [spectrogram_transform(waveform) for waveform in waveform]
 
         return spectrograms
-    
-    def augment_waveform_batch(self, waveform_batch, attention_mask):
+
+    def augment_waveform_batch(self, waveform_batch, attention_mask, batch):
         """
         1. Applies augmentations to waveform
         2. Applies conversions to spectrogram and augmentations to spectrogram if task is vision
@@ -240,7 +234,7 @@ class TransformsWrapper(BatchTransformer):
         """
         
         waveform_batch = waveform_batch.unsqueeze(1)
-        
+
         if self.wave_aug is not None:
             audio_augmented = self.wave_aug(
                 samples=waveform_batch, sample_rate=self.sampling_rate
@@ -270,8 +264,8 @@ class TransformsWrapper(BatchTransformer):
 
         if self.model_type == "vision":
             # spectrogram conversion and augmentation 
-            audio_augmented = self._vision_augmentations(audio_augmented)
-        
+            audio_augmented = self._vision_augmentations(audio_augmented) #!TODO: its conversion + augmentation
+            
         return audio_augmented
     
     def _zero_mean_unit_var_norm(
@@ -327,7 +321,7 @@ class TransformsWrapper(BatchTransformer):
                 
                 normed_input_values.append(normed_vector)
         return torch.stack(normed_input_values)
-           
+   
     def _vision_augmentations(self, audio_augmented):
         spectrograms = self._spectrogram_conversion(audio_augmented)
         if self.spec_aug is not None:
@@ -362,3 +356,10 @@ class TransformsWrapper(BatchTransformer):
         if self.preprocessing.normalize_spectrogram:
             audio_augmented = (audio_augmented - (-4.268)) / (4.569 * 2)
         return audio_augmented
+   
+    def _prepare_call(self):
+        if self.mode in ("test", "predict"):
+            self.wave_aug = None
+            self.spec_aug = None
+            self.background_noise = None
+        return
