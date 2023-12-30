@@ -5,7 +5,7 @@ defaults:
   - override /datamodule/transforms: base_transform.yaml
   - override /module: embedding_multilabel.yaml
   - override /module/network/model/tf_model: yamnet_model.yaml
-  - override /callbacks: default.yaml 
+  - override /callbacks: none.yaml 
   - override /trainer: mps_accelerator.yaml
 
 
