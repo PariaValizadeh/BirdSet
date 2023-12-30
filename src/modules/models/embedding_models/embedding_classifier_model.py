@@ -7,15 +7,12 @@ import torch
 import hydra
 
 class EmbeddingClassifier(nn.Module):
-    def __init__(self, tf_model, num_classes, is_hydra:bool = False) -> None:
+    def __init__(self, tf_model, num_classes, device) -> None:
         super().__init__()
-        if not is_hydra:
-            self.embedding_model = tf_model
-        else:
-            print(type(tf_model))
-            self.embedding_model = hydra.utils.instantiate(tf_model)
+        self.embedding_model = tf_model
         self.num_classes = num_classes
         self.linear = nn.Linear(in_features=self.embedding_model.embedding_dimension, out_features=num_classes)
+        self.device = device
         # this is from the feature embeddings paper
         # using cce does not seem to be natively supported by torch
         # self.m = nn.Sigmoid() # this can be configured via module
@@ -27,11 +24,12 @@ class EmbeddingClassifier(nn.Module):
         # self.ece = torchmetrics.CalibrationError(task="multiclass", num_classes=num_classes)
         # self.auroc = torchmetrics.AUROC(task="multiclass", num_classes=num_classes)
     
-    def forward(self, x, return_hidden_state=False, **kwargs) -> Any:
-        x = x.cpu()
-        embeddings = self.embedding_model(x)
+    def forward(self, input_values, return_hidden_state=False, **kwargs) -> Any:
+        input_values = input_values.cpu()
+        embeddings = self.embedding_model(input_values)
         embeddings = torch.from_numpy(embeddings).to(self.device)
         logits = self.linear(embeddings)
+        logits = logits.unsqueeze(0)
         return logits
     
     @torch.inference_mode()

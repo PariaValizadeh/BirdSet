@@ -1,0 +1,10 @@
+_target_: src.modules.models.embedding_models.perch_tf_embedding_model.PerchTfEmbeddingModel
+
+window_size_s: 5.0
+hop_size_s: 5.0
+sample_rate: 32_000
+num_classes: ${datamodule.dataset.n_classes}
+embed_dim: 1280
+model_path: ""
+tfhub_version: 4
+model_key: "taxonomy_model_tf"

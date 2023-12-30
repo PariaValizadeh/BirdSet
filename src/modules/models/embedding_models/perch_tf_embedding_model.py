@@ -10,8 +10,8 @@ class TfEmbeddingModel(nn.Module):
         self.embedding_dimension = embedding_dimension
         self.num_classes = num_classes
     
-    def forward(self, x):
-        inference = self.tf_model(x)
+    def forward(self, input_values):
+        inference = self.tf_model(input_values)
         embeddings = inference.embeddings
         embeddings = self.transform_embeddings(embeddings)
         return embeddings

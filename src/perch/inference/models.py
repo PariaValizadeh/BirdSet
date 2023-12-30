@@ -497,16 +497,20 @@ class BirdNet(interface.EmbeddingModel):
         None, {self.class_list_name: all_logits}, None
     )
 
-  def embed_tflite(self, audio_array: np.ndarray) -> interface.InferenceOutputs:
+  def embed_tflite(self, audio_array: np.ndarray, reshape:bool=True) -> interface.InferenceOutputs:
     """Create an embedding and logits using the BirdNet TFLite model."""
+    # reshape needs to be set to true when augmentations from transforms are used... (which is not correct.)
     input_details = self.model.get_input_details()[0]
     output_details = self.model.get_output_details()[0]
     embedding_idx = output_details['index'] - 1
     embeddings = []
     logits = []
     for audio in audio_array:
+      input = np.float32(audio)
+      if reshape:
+        input = input[np.newaxis, :]
       self.model.set_tensor(
-          input_details['index'], np.float32(audio)[np.newaxis, :]
+          input_details['index'], input
       )
       self.model.invoke()
       logits.append(self.model.get_tensor(output_details['index']))
