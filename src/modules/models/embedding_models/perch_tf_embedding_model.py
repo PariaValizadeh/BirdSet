@@ -73,8 +73,8 @@ class AverageTfEmbeddingModel(DownloadTfEmbeddingModel):
         super().__init__(config_dict, model_key)
     
     def transform_embeddings(self, embeddings):
-        embeddings = embeddings.squeeze()
         embeddings = embeddings.mean(axis=1)
+        embeddings = embeddings.squeeze()
         return embeddings
 
 class YamnetTfEmbeddingModel(AverageTfEmbeddingModel):
