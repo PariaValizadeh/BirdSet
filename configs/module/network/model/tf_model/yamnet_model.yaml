@@ -1,0 +1,22 @@
+_target_: src.modules.models.embedding_models.perch_tf_embedding_model.YamnetTfEmbeddingModel
+
+window_size_s: 3.0
+hop_size_s: 3.0
+sample_rate: 16_000
+num_classes: ${datamodule.dataset.n_classes}
+embed_dim: 1024
+model_path: "https://tfhub.dev/google/yamnet/1"
+embedding_index: 1
+logits_index: 0
+model_key: "tfhub_model"
+
+
+# window_size_s:float = 3.0,
+#                  hop_size_s:float = 3.0,
+#                  sample_rate:int = 16000,
+#                  num_classes:int = 521,
+#                  embed_dim:int = 1024,
+#                  model_path:str = "https://tfhub.dev/google/yamnet/1",
+#                  embedding_index:int = 1,
+#                  logits_index:int = 0,
+#                  model_key:str = "tfhub_model"

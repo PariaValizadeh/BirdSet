@@ -1,0 +1,22 @@
+_target_: src.modules.models.embedding_models.perch_tf_embedding_model.VGGishTfEmbeddingModel
+
+window_size_s: 3.0
+hop_size_s: 3.0
+sample_rate: 16_000
+num_classes: ${datamodule.dataset.n_classes}
+embed_dim: 128
+model_path: "https://tfhub.dev/google/vggish/1"
+embedding_index: -1
+logits_index: -1
+model_key: "tfhub_model"
+
+
+# window_size_s:float = 3.0,
+#                  hop_size_s:float = 3.0,
+#                  sample_rate:int = 16000,
+#                  num_classes:int = 128,
+#                  embed_dim:int = 128,
+#                  model_path:str = "https://tfhub.dev/google/vggish/1",
+#                  embedding_index:int = -1,
+#                  logits_index:int = -1,
+#                  model_key:str = "tfhub_model"
