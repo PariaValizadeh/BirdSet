@@ -8,21 +8,13 @@ import hydra
 
 class EmbeddingClassifier(nn.Module):
     def __init__(self, tf_model, num_classes, device) -> None:
+        # device is necessary as the embedding model is most likely to run on the cpu (due to tensorflow integration)
+        # -> numpy arrays are passed to the cpu, fed into tensorflow, and afterwards transferred to the gpu again
         super().__init__()
         self.embedding_model = tf_model
         self.num_classes = num_classes
         self.linear = nn.Linear(in_features=self.embedding_model.embedding_dimension, out_features=num_classes)
         self.device = device
-        # this is from the feature embeddings paper
-        # using cce does not seem to be natively supported by torch
-        # self.m = nn.Sigmoid() # this can be configured via module
-        # self.criterion = nn.BCELoss()
-        # bceloss is still broken, falling back to crossentropy
-        # self.criterion = nn.CrossEntropyLoss()
-        # different erros
-        # self.acc = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes)
-        # self.ece = torchmetrics.CalibrationError(task="multiclass", num_classes=num_classes)
-        # self.auroc = torchmetrics.AUROC(task="multiclass", num_classes=num_classes)
     
     def forward(self, input_values, return_hidden_state=False, **kwargs) -> Any:
         input_values = input_values.cpu()
