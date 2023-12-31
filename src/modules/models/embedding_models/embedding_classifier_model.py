@@ -35,35 +35,3 @@ class EmbeddingClassifier(nn.Module):
     @torch.inference_mode()
     def get_representations(self, dataloader, device):
         pass 
-        
-    # def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
-    #     x = batch["input_values"]
-    #     y = batch["labels"]
-    #     x = x.cpu()
-    #     result = self(x)
-        
-    #     loss = self.criterion(result, y)
-    #     acc = self.acc(result, y)
-    #     ece = self.ece(result, y)
-    #     auroc = self.auroc(result, y)
-    #     self.log("train_loss", loss, on_epoch=True, prog_bar=True, logger=True)
-    #     self.log("train_acc", acc, on_epoch=True, prog_bar=True, logger=True)
-    #     self.log("train_ece", ece, on_epoch=True, prog_bar=True, logger=True)
-    #     self.log("train_auroc", auroc, on_epoch=True, prog_bar=True, logger=True)
-    #     return loss
-    
-    # def test_step(self, batch, batch_idx) -> STEP_OUTPUT:
-    #     x = batch["input_values"]
-    #     y = batch["labels"]
-    #     x = x.cpu()
-    #     pass
-        
-    # def validation_step(self, batch, batch_idx) -> STEP_OUTPUT:
-    #     x = batch["input_values"]
-    #     y = batch["labels"]
-    #     x = x.cpu()
-    #     pass
-    
-    # def configure_optimizers(self) -> OptimizerLRScheduler:
-    #     optimizer = optim.Adam(self.parameters(), self.learning_rate)
-    #     return optimizer
