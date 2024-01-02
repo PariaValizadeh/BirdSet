@@ -1,6 +1,7 @@
 from src.perch.inference import models
 from torch import nn
 from ml_collections import ConfigDict, config_dict
+import numpy as np
 
 
 class TfEmbeddingModel(nn.Module):
@@ -17,7 +18,7 @@ class TfEmbeddingModel(nn.Module):
         return embeddings
     
     def transform_embeddings(self, embeddings):
-        embeddings = embeddings.squeeze()
+        # embeddings = embeddings.squeeze()
         return embeddings
 
 class DownloadTfEmbeddingModel(TfEmbeddingModel):
@@ -74,8 +75,7 @@ class AverageTfEmbeddingModel(DownloadTfEmbeddingModel):
     
     def transform_embeddings(self, embeddings):
         embeddings = embeddings.mean(axis=1)
-        embeddings = embeddings.squeeze()
-        return embeddings
+        return super().transform_embeddings(embeddings)
 
 class YamnetTfEmbeddingModel(AverageTfEmbeddingModel):
     def __init__(self, window_size_s:float = 3.0,

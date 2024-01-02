@@ -21,7 +21,7 @@ class EmbeddingClassifier(nn.Module):
         embeddings = self.embedding_model(input_values)
         embeddings = torch.from_numpy(embeddings).to(self.device)
         logits = self.linear(embeddings)
-        logits = logits.unsqueeze(0)
+        # logits = logits.unsqueeze(0)
         return logits
     
     @torch.inference_mode()

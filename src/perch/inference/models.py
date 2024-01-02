@@ -338,8 +338,10 @@ class TaxonomyModelTF(interface.EmbeddingModel):
       logits, embeddings = self.model.infer_tf(window[np.newaxis, :])
       all_logits = np.concatenate([all_logits, logits], axis=0)
       all_embeddings = np.concatenate([all_embeddings, embeddings], axis=0)
+    # it is likely that the following line has to be removed
     all_embeddings = all_embeddings[:, np.newaxis, :]
-
+    print("All embeddings")
+    print(all_embeddings.shape)
     return interface.InferenceOutputs(
         all_embeddings, {'label': all_logits}, None
     )
@@ -359,10 +361,11 @@ class TaxonomyModelTF(interface.EmbeddingModel):
     rebatched_audio = framed_audio.reshape([-1, framed_audio.shape[-1]])
     logits, embeddings = self.model.infer_tf(rebatched_audio)
     logits = np.reshape(logits, framed_audio.shape[:2] + (logits.shape[-1],))
-    embeddings = np.reshape(
-        embeddings, framed_audio.shape[:2] + (embeddings.shape[-1],)
-    )
-
+    # embeddings = np.reshape(
+    #     embeddings, framed_audio.shape[:2] + (embeddings.shape[-1],)
+    # )
+    # embeddings = embeddings.squeeze()
+    # print(embeddings.shape)
     return interface.InferenceOutputs(embeddings, {'label': logits}, None)
 
 
@@ -426,6 +429,7 @@ class SeparatorModelTF(interface.EmbeddingModel):
     sep_audio = np.reshape(sep_audio, [-1, sep_audio.shape[-1]])
     all_logits = np.reshape(all_logits, [-1, all_logits.shape[-1]])
     all_embeddings = np.reshape(all_embeddings, [-1, all_embeddings.shape[-1]])
+    print(all_embeddings.shape)
     return interface.InferenceOutputs(
         all_embeddings, {'label': all_logits}, sep_audio
     )
@@ -518,6 +522,7 @@ class BirdNet(interface.EmbeddingModel):
     # Create [Batch, 1, Features]
     embeddings = np.array(embeddings)
     logits = np.array(logits)
+    embeddings = embeddings.squeeze()
     return interface.InferenceOutputs(
         embeddings, {self.class_list_name: logits}, None
     )
@@ -671,7 +676,6 @@ class TFHubModel(interface.EmbeddingModel):
       logits = {'label': outputs[self.logits_index]}
     else:
       logits = None
-    embeddings = embeddings[:, np.newaxis, :]
     return interface.InferenceOutputs(embeddings, logits, None, False)
 
   def batch_embed(self, audio_batch: np.ndarray) -> interface.InferenceOutputs:

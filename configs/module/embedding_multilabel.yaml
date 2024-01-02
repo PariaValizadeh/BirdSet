@@ -14,7 +14,7 @@ optimizer:
   lr: 1e-5
 
 loss:
-  _target_: torch.nn.BCELoss
+  _target_: torch.nn.BCEWithLogitsLoss
   
 lr_scheduler:
   scheduler:

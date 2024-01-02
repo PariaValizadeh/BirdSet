@@ -4,9 +4,9 @@ defaults:
   - override /datamodule: high_sierras.yaml
   - override /datamodule/transforms: base_transform.yaml
   - override /module: embedding_multilabel.yaml
-  - override /module/network/model/tf_model: yamnet_model.yaml
-  - override /callbacks: none.yaml 
-  - override /trainer: mps_accelerator.yaml
+  - override /module/network/model/tf_model: birdnet_model.yaml
+  - override /callbacks: default.yaml 
+  - override /trainer: default.yaml
 
 
 tags: ["mr", "birdnet", "multilabel", "embedding"]
@@ -18,18 +18,18 @@ seed: 42
 
 trainer:
   min_epochs: 1
-  max_epochs: 10
+  max_epochs: 1
 
 datamodule:
   dataset:
     val_split: 0.2
   loaders:
     train:
-      batch_size: 1
+      batch_size: 4
     valid:
-      batch_size: 1
+      batch_size: 4
     test:
-      batch_size: 1
+      batch_size: 4
 
 logger:
   wandb:
