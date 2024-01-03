@@ -18,13 +18,9 @@
 import dataclasses
 from typing import Any, Callable, Dict
 
-from absl import logging
-from src.perch.taxonomy import namespace
-from etils import epath
 import librosa
 from ml_collections import config_dict
 import numpy as np
-import tensorflow as tf
 
 LogitType = Dict[str, np.ndarray]
 
@@ -155,84 +151,6 @@ class EmbeddingModel:
     framed_audio = np.divide(framed_audio, peak_norm, where=(peak_norm > 0.0))
     framed_audio = framed_audio * target_peak
     return framed_audio
-
-
-@dataclasses.dataclass
-class LogitsOutputHead:
-  """A TensorFlow model which classifies embeddings.
-
-  Attributes:
-    model_path: Path to saved model.
-    logits_key: Name of this output head.
-    logits_model: Callable model converting embeddings of shape [B,
-      embedding_width] to [B, num_classes].
-    class_list: ClassList specifying the ordered classes.
-    channel_pooling: Pooling to apply to channel dimension of logits. Specify an
-      empty string to apply no pooling.
-  """
-
-  model_path: str
-  logits_key: str
-  logits_model: Any
-  class_list: namespace.ClassList
-  channel_pooling: str = 'max'
-
-  @classmethod
-  def from_config(cls, config: config_dict.ConfigDict):
-    logits_model = tf.saved_model.load(config.model_path)
-    model_path = epath.Path(config.model_path)
-    with (model_path / 'class_list.csv').open('r') as f:
-      class_list = namespace.ClassList.from_csv(f)
-    return cls(
-        logits_model=logits_model,
-        class_list=class_list,
-        **config,
-    )
-
-  def save_model(self, output_path: str, embeddings_path: str):
-    """Write a SavedModel and metadata to disk."""
-    # Write the model.
-    tf.saved_model.save(self.logits_model, output_path)
-    output_path = epath.Path(output_path)
-    # Copy the embeddings_config if provided
-    if embeddings_path:
-      (epath.Path(embeddings_path) / 'config.json').copy(
-          output_path / 'embeddings_config.json', overwrite=True
-      )
-    # Write the class list.
-    with (output_path / 'class_list.csv').open('w') as f:
-      f.write(self.class_list.to_csv())
-
-  def add_logits(self, model_outputs: InferenceOutputs, keep_original: bool):
-    """Update the model_outputs to include logits from this output head."""
-    embeddings = model_outputs.embeddings
-    if embeddings is None:
-      logging.warning('No embeddings found in model outputs.')
-      return model_outputs
-    flat_embeddings = np.reshape(embeddings, [-1, embeddings.shape[-1]])
-    flat_logits = self.logits_model(flat_embeddings)
-    logits_shape = np.concatenate(
-        [np.shape(embeddings)[:-1], np.shape(flat_logits)[-1:]], axis=0
-    )
-    logits = np.reshape(flat_logits, logits_shape)
-    # Embeddings have shape [B, T, C, D] or [T, C, D], so our logits also
-    # have a channel dimension.
-    # Output logits should have shape [B, T, D] or [T, D], so we reduce the
-    # channel axis as specified by the user.
-    # The default is 'max' which is reasonable for separated audio and
-    # is equivalent to 'squeeze' for the single-channel case.
-    logits = pool_axis(logits, -2, self.channel_pooling)
-    new_outputs = InferenceOutputs(
-        embeddings=model_outputs.embeddings,
-        logits=model_outputs.logits,
-        separated_audio=model_outputs.separated_audio,
-        batched=model_outputs.batched,
-    )
-    if new_outputs.logits is None or not keep_original:
-      new_outputs.logits = {}
-    new_outputs.logits[self.logits_key] = logits
-    return new_outputs
-
 
 def embed_from_batch_embed_fn(
     embed_fn: EmbedFnType, audio_array: np.ndarray

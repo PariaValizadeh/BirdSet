@@ -4,7 +4,7 @@ defaults:
   - override /datamodule: high_sierras.yaml
   - override /datamodule/transforms: base_transform.yaml
   - override /module: embedding_multilabel.yaml
-  - override /module/network/model/tf_model: birdnet_model.yaml
+  - override /module/network: BirdNetEmbedding.yaml
   - override /callbacks: default.yaml 
   - override /trainer: default.yaml
 
