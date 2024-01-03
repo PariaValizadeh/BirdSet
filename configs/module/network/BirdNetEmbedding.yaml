@@ -1,0 +1,26 @@
+# defaults:
+#   - model/embedding_model: birdnet_model.yaml
+
+
+model:
+  _target_: src.modules.models.embedding_models.embedding_classifier_model.EmbeddingClassifier
+  num_classes: ${datamodule.dataset.n_classes}
+  device: ${trainer.accelerator}
+  embedding_model: 
+    _target_: src.modules.models.embedding_models.perch_tf_embedding_model.BirdNetTfEmbeddingModel
+    is_embedding: True
+    window_size_s: 3.0
+    hop_size_s: 3.0
+    sample_rate: 48_000
+    num_classes: ${datamodule.dataset.n_classes}
+    embed_dim: 1024
+    model_path: "/Users/moritzrichert/Downloads/V2.4/BirdNET_GLOBAL_6K_V2.4_Model_FP32.tflite"
+    num_tflite_threads: 4
+    class_list_name: "birdnet_v2_4"
+    model_key: "birdnet"
+
+
+model_name: Embedding_BirdNet_v2_4
+model_type: raw
+torch_compile: False
+sampling_rate: ${module.network.model.embedding_model.sample_rate}
