@@ -1,6 +1,6 @@
 from typing import Literal
 from collections import Counter
-from src.datamodule.components.transforms import BatchTransformer
+from src.datamodule.components.transforms import BaseTransformer
 from src.datamodule.components.event_decoding import EventDecoding
 from src.datamodule.components.event_mapping import XCEventMapping
 from .base_datamodule import BaseDataModuleHF, DatasetConfig, LoadersConfig
@@ -14,7 +14,7 @@ class GADMEDataModule(BaseDataModuleHF):
             self,
             dataset: DatasetConfig = DatasetConfig(),
             loaders: LoadersConfig = LoadersConfig(),
-            transforms: BatchTransformer = BatchTransformer(),
+            transforms: BaseTransformer = BaseTransformer(),
             mapper: XCEventMapping = XCEventMapping()
     ):
         super().__init__(

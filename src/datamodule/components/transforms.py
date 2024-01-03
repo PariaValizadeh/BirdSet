@@ -28,7 +28,7 @@ class PreprocessingConfig:
     normalize_spectorgram: bool = True
     normalize_waveform: Literal['instance_normalization', 'instance_min_max'] | None  = None
 
-class BatchTransformer:
+class BaseTransformer:
     """
     Base class to handle audio transformations for different model types and modes.
 
@@ -137,7 +137,7 @@ class BatchTransformer:
 
         return batch
 
-class TransformsWrapper(BatchTransformer):
+class TransformsWrapper(BaseTransformer):
     """
     A class to handle audio transformations for different model types and modes.
 

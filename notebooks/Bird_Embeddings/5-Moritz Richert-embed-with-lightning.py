@@ -1,7 +1,7 @@
 # %%
 from src.datamodule.gadme_datamodule import GADMEDataModule
 from src.datamodule.base_datamodule import DatasetConfig, LoadersConfig, LoaderConfig
-from src.datamodule.components.transforms import TransformsWrapper, PreprocessingConfig, BatchTransformer
+from src.datamodule.components.transforms import TransformsWrapper, PreprocessingConfig, BaseTransformer
 from src.datamodule.components.event_mapping import XCEventMapping
 from src.datamodule.components.event_decoding import EventDecoding
 from src.datamodule.components.feature_extraction import DefaultFeatureExtractor
@@ -31,7 +31,7 @@ loaders_config.test = LoaderConfig(12, False)
 mapper = XCEventMapping(biggest_cluster=True,
                         event_limit=5,
                         no_call=True)
-transforms_wrapper = BatchTransformer(
+transforms_wrapper = BaseTransformer(
     task = "multiclass",
     sampling_rate=sample_rate,
     max_length=window_size_s)
