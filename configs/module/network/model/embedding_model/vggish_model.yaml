@@ -1,5 +1,6 @@
 _target_: src.modules.models.embedding_models.perch_tf_embedding_model.VGGishTfEmbeddingModel
 
+is_embedding: True
 window_size_s: 3.0
 hop_size_s: 3.0
 sample_rate: 16_000
