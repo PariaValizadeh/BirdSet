@@ -1,0 +1,16 @@
+apache-beam
+clu
+flax
+ml-collections
+optax
+tensorflow
+tensorflow-io
+tensorflow-datasets
+pandas
+etils
+tensorflow-hub
+imageio
+matplotlib
+notebook
+chex
+numba
