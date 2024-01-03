@@ -22,6 +22,7 @@ from typing import BinaryIO, TextIO
 
 from etils import epath
 
+# we can do this more elegantly in the future with a specified path etc.
 
 def get_absolute_path(relative_path: os.PathLike[str] | str) -> epath.Path:
   """Returns the absolute epath.Path associated with the relative_path.
