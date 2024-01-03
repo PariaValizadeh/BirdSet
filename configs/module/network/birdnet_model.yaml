@@ -1,0 +1,12 @@
+_target_: src.modules.models.embedding_models.perch_tf_embedding_model.BirdNetTfEmbeddingModel
+
+is_embedding: False
+window_size_s: 3.0
+hop_size_s: 3.0
+sample_rate: 48_000
+num_classes: ${datamodule.dataset.n_classes}
+embed_dim: 1024
+model_path: "/Users/moritzrichert/Downloads/V2.4/BirdNET_GLOBAL_6K_V2.4_Model_FP32.tflite"
+num_tflite_threads: 4
+class_list_name: "birdnet_v2_4"
+model_key: "birdnet"

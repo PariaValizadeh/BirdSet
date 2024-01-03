@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Literal
+from typing import Any, Dict, Literal
 
 import numpy as np
 from omegaconf import DictConfig
@@ -228,33 +228,10 @@ class TransformsWrapper(BaseTransforms):
 
     def augment_waveform_batch(self, waveform_batch, attention_mask, batch):
         """
-        Applies transformations to a batch of data.
-        1. Applies Event Decoding if specified / needed
-        2. Applies feature extraction with FeatureExtractor
-        3. Applies augmentations to waveform
-        4. Applies conversions to spectrogram and augmentations to spectrogram if task is vision
-        5. Convert labels type to float32 if task is multilabel
-
+        1. Applies augmentations to waveform
+        2. Applies conversions to spectrogram and augmentations to spectrogram if task is vision
+        3. Convert labels type to float32 if task is multilabel
         """
-
-        if self.event_decoder is not None: 
-            batch = self.event_decoder(batch)
-
-        #----
-        # Feature extractor
-        #----
-
-        # audio collating and padding
-        waveform_batch = [audio["array"] for audio in batch["audio"]]
-
-        # extract/pad/truncate
-        waveform_batch = self.feature_extractor(
-            waveform_batch,
-            padding="max_length",
-            max_length=self.sampling_rate*5, #!TODO: how to determine 5s
-            truncation=True,
-            return_attention_mask=True
-        )
         
         waveform_batch = waveform_batch.unsqueeze(1)
 

@@ -1,7 +1,7 @@
 _target_: src.datamodule.base_datamodule.LoadersConfig
 train:
   _target_: src.datamodule.base_datamodule.LoaderConfig
-  batch_size: 8
+  batch_size: 2
   shuffle: True
   num_workers: 4
   drop_last: False
@@ -10,7 +10,7 @@ train:
 
 valid:
   _target_: src.datamodule.base_datamodule.LoaderConfig
-  batch_size: 8
+  batch_size: 2
   shuffle: False
   num_workers: 4
   drop_last: False
@@ -19,7 +19,7 @@ valid:
 
 test:
   _target_: src.datamodule.base_datamodule.LoaderConfig
-  batch_size: 8
+  batch_size: 2
   shuffle: False
   num_workers: 4
   drop_last: False

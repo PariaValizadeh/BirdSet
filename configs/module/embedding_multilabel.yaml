@@ -1,0 +1,66 @@
+_target_: src.modules.multilabel_module.MultilabelModule
+
+defaults:
+  - _self_
+  - network: BirdNetEmbedding.yaml
+
+task: multilabel
+class_weights_loss: ${datamodule.dataset.class_weights_loss}
+
+# reproduce values from embeddings paper
+# Adam, BCELoss and Sigmoid
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 1e-5
+
+loss:
+  _target_: torch.nn.BCEWithLogitsLoss
+  
+lr_scheduler:
+  scheduler:
+    _target_: transformers.get_linear_schedule_with_warmup
+  extras:
+    interval: step
+    warmup_ratio: 0.05
+
+metrics: 
+  main: 
+    _target_: src.modules.metrics.cmAP
+    num_labels: ${datamodule.dataset.n_classes}
+    sample_threshold: 0
+    average: macro
+    thresholds: null
+  val_best: 
+    _target_: "torchmetrics.MaxMetric"
+  additional: 
+    auroc:
+      _target_: "torchmetrics.classification.AUROC"
+      task: "multilabel"
+      num_labels: ${datamodule.dataset.n_classes} 
+      average: "macro"
+      thresholds: null
+    t1acc:
+      _target_: src.modules.metrics.T1Accuracy
+  eval_complete:
+    pcmap:
+      _target_: src.modules.metrics.pcmAP
+      num_labels: ${datamodule.dataset.n_classes}
+      padding_factor: 5
+      average: macro
+      thresholds: null
+    cmap5:
+      _target_: src.modules.metrics.cmAP
+      num_labels: ${datamodule.dataset.n_classes}
+      sample_threshold: 5
+      average: macro
+      thresholds: null
+
+output_activation: 
+  _target_: "torch.sigmoid"
+
+logging_params:
+  on_step: False
+  on_epoch: True
+  sync_dist: False
+  prog_bar: True  
+
