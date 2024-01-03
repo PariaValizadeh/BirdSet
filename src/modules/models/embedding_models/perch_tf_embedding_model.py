@@ -1,4 +1,4 @@
-from src.perch.inference import models
+from src.modules.models.embedding_models.perch.inference import models
 from torch import nn
 from ml_collections import ConfigDict, config_dict
 import numpy as np

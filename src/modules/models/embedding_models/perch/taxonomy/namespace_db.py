@@ -20,9 +20,8 @@ import json
 import os
 import typing
 
-from src.perch import path_utils
-from src.perch.taxonomy import namespace
-from etils import epath
+from src.modules.models.embedding_models.perch import path_utils
+from src.modules.models.embedding_models.perch.taxonomy import namespace
 
 TAXONOMY_DATABASE_FILENAME = "taxonomy/taxonomy_database.json"
 
