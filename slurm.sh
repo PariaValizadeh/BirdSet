@@ -4,23 +4,14 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
 #SBATCH --partition=main
-#SBATCH --job-name=glae_dbpedia_entropy_bert
-#SBATCH --output=/mnt/work/lrauch/logs/active_learning/%x_%a.log
+#SBATCH --job-name=high_sierras_embed_birdnet
 #SBATCH --array=1-5%5
 date;hostname;pwd
 source /mnt/stud/home/mrichert/.zshrc
-conda activate uncertainty-evaluation
+conda activate 5gadme
 cd /mnt/stud/home/mrichert/Projects/GADME-BaselineResults-BA/src
 export CUDA_LAUNCH_BLOCKING=1
 export HYDRA_FULL_ERROR=1
-srun python -u al_txt.py \
-model=$MODEL \
-dataset=$DATASET \
-output_dir=$OUTPUT_DIR \
-al_strategy=$STRATEGY \
-random_seed=$SLURM_ARRAY_TASK_ID \
-al_strategy=$STRATEGY \
-al_cycle.n_init=$N_INIT \
-al_cycle.acq_size=$ACQ_SIZE \
-al_cycle.n_acq=$N_ACQ \
-wandb.group=$GROUP
+srun python -u main.py \
+experiment= high_sierras_embed_birdnet_base \
+paths=server
