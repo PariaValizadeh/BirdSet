@@ -4,4 +4,4 @@ defaults:
 model_name: Embedding
 model_type: raw
 torch_compile: False
-sampling_rate: ${module.network.model.tf_model.sample_rate}
+sampling_rate: ${module.network.model.embedding_model.sample_rate}

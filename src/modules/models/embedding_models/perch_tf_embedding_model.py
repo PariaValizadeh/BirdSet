@@ -2,34 +2,52 @@ from src.modules.models.embedding_models.perch.inference import models
 from torch import nn
 from ml_collections import ConfigDict, config_dict
 import numpy as np
-
+import torch
 
 class TfEmbeddingModel(nn.Module):
-    def __init__(self, tf_model, embedding_dimension, num_classes):
+    def __init__(self, tf_model, embedding_dimension, num_classes, is_embedding:True):
         super().__init__()
         self.tf_model = tf_model
         self.embedding_dimension = embedding_dimension
         self.num_classes = num_classes
+        self.is_embedding = is_embedding
+        if is_embedding:
+            self.forward = self.forward_embed
+        else:
+            self.forward = self.forward_logits
     
-    def forward(self, input_values):
+    def forward_embed(self, input_values, device):
+        input_values = input_values.cpu()
         inference = self.tf_model(input_values)
         embeddings = inference.embeddings
         embeddings = self.transform_embeddings(embeddings)
+        embeddings = torch.from_numpy(embeddings).to(device)
         return embeddings
     
+    def forward_logits(self, input_values, device):
+        input_values = input_values.cpu()
+        inference = self.tf_model(input_values)
+        logits = inference.logits
+        logits = self.transform_logits(logits)
+        logits = torch.from_numpy(logits).to(device)
+        return logits
+    
+    def transform_logits(logits):
+        return logits
+    
     def transform_embeddings(self, embeddings):
-        # embeddings = embeddings.squeeze()
         return embeddings
 
 class DownloadTfEmbeddingModel(TfEmbeddingModel):
-    def __init__(self, config_dict:config_dict.ConfigDict, model_key:str):
+    def __init__(self, config_dict:config_dict.ConfigDict, model_key:str, is_embedding=True):
         model_class = models.model_class_map()[model_key]
         tf_wrapper = model_class.from_config(config_dict)
         tf_model = tf_wrapper.batch_embed
-        super().__init__(tf_model, embedding_dimension=config_dict.embed_dim, num_classes=config_dict.num_classes)
+        super().__init__(tf_model, embedding_dimension=config_dict.embed_dim, num_classes=config_dict.num_classes, is_embedding=is_embedding)
 
 class PerchTfEmbeddingModel(DownloadTfEmbeddingModel):
     def __init__(self, 
+                 is_embedding = True,
                  window_size_s:float = 5.0, 
                  hop_size_s:float = 5.0, 
                  sample_rate:int = 32000, 
@@ -46,10 +64,12 @@ class PerchTfEmbeddingModel(DownloadTfEmbeddingModel):
         self.config.embed_dim = embed_dim
         self.config.model_path = model_path
         self.config.tfhub_version = tfhub_version
-        super().__init__(config_dict=self.config, model_key=model_key)
+        super().__init__(config_dict=self.config, model_key=model_key, is_embedding=is_embedding)
 
 class BirdNetTfEmbeddingModel(DownloadTfEmbeddingModel):
-    def __init__(self, window_size_s:float = 3.0, 
+    def __init__(self, 
+                 is_embedding=True,
+                 window_size_s:float = 3.0, 
                  hop_size_s:float = 3.0, 
                  sample_rate:int = 48000, 
                  num_classes:int = 6522, 
@@ -67,18 +87,20 @@ class BirdNetTfEmbeddingModel(DownloadTfEmbeddingModel):
         self.config.model_path = model_path
         self.config.num_tflite_threads = num_tflite_threads
         self.config.class_list_name = class_list_name
-        super().__init__(config_dict=self.config, model_key=model_key)
+        super().__init__(config_dict=self.config, model_key=model_key, is_embedding=is_embedding)
 
 class AverageTfEmbeddingModel(DownloadTfEmbeddingModel):
-    def __init__(self, config_dict:config_dict.ConfigDict, model_key:str):
-        super().__init__(config_dict, model_key)
+    def __init__(self, config_dict:config_dict.ConfigDict, model_key:str, is_embedding = True):
+        super().__init__(config_dict, model_key, is_embedding=is_embedding)
     
     def transform_embeddings(self, embeddings):
         embeddings = embeddings.mean(axis=1)
         return super().transform_embeddings(embeddings)
 
 class YamnetTfEmbeddingModel(AverageTfEmbeddingModel):
-    def __init__(self, window_size_s:float = 3.0,
+    def __init__(self, 
+                 is_embedding = True,
+                 window_size_s:float = 3.0,
                  hop_size_s:float = 3.0,
                  sample_rate:int = 16000,
                  num_classes:int = 521,
@@ -97,10 +119,12 @@ class YamnetTfEmbeddingModel(AverageTfEmbeddingModel):
         self.config.model_url = model_path
         self.config.embedding_index = embedding_index
         self.config.logits_index = logits_index
-        super().__init__(config_dict=self.config, model_key=model_key)
+        super().__init__(config_dict=self.config, model_key=model_key, is_embedding=is_embedding)
 
 class VGGishTfEmbeddingModel(AverageTfEmbeddingModel):
-    def __init__(self, window_size_s:float = 3.0,
+    def __init__(self, 
+                 is_embedding = True,
+                 window_size_s:float = 3.0,
                  hop_size_s:float = 3.0,
                  sample_rate:int = 16000,
                  num_classes:int = 128,
@@ -119,4 +143,4 @@ class VGGishTfEmbeddingModel(AverageTfEmbeddingModel):
         self.config.model_url = model_path
         self.config.embedding_index = embedding_index
         self.config.logits_index = logits_index
-        super().__init__(config_dict=self.config, model_key=model_key)
+        super().__init__(config_dict=self.config, model_key=model_key, is_embedding=is_embedding)
