@@ -10,18 +10,9 @@
 date;hostname;pwd
 source /mnt/stud/home/mrichert/.zshrc
 conda activate uncertainty-evaluation
-cd /mnt/stud/home/mrichert/Projects/GADME-BaselineResults-BA
+cd /mnt/stud/home/mrichert/Projects/GADME-BaselineResults-BA/src
 export CUDA_LAUNCH_BLOCKING=1
 export HYDRA_FULL_ERROR=1
-MODEL=bert
-DATASET=dbpedia
-STRATEGY=uncertainty
-N_INIT=100
-ACQ_SIZE=100
-N_ACQ=15
-GROUP=bert_entropy_dbpedia
-OUTPUT_DIR=/mnt/work/lrauch/glae-results/${DATASET}/$MODEL/${STRATEGY}/N_INIT${N_INIT}__ACQ_SIZE${ACQ_SIZE}__N_ACQ${N_ACQ}/seed${SLURM_ARRAY_TASK_ID}
-echo "Writing results to ${OUTPUT_DIR}"
 srun python -u al_txt.py \
 model=$MODEL \
 dataset=$DATASET \
