@@ -2,7 +2,7 @@ _target_: src.modules.multilabel_module.MultilabelModule
 
 defaults:
   - _self_
-  - network: embedding.yaml
+  - network: BirdNetEmbedding.yaml
 
 task: multilabel
 class_weights_loss: ${datamodule.dataset.class_weights_loss}

@@ -1,7 +1,0 @@
-_target_: src.modules.models.embedding_models.embedding_classifier_model.EmbeddingClassifier
-
-defaults:
-  - embedding_model: birdnet_model.yaml
-
-num_classes: ${datamodule.dataset.n_classes}
-device: ${trainer.accelerator}
