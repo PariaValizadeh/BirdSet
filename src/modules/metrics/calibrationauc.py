@@ -3,10 +3,11 @@ from typing_extensions import Literal
 import torch
 from torch import Tensor
 from torchmetrics import Metric
-from torchmetrics.classification import BinaryAUROC, MultilabelAUROC
+from torchmetrics.classification import MulticlassAUROC, MultilabelAUROC
 
-class CalibrationAuroc(BinaryAUROC):
+class CalibrationAuroc(MulticlassAUROC):
     def __init__(self, 
+                 num_classes:int,
                  mode: Literal["multilabel", "multiclass"] = "multiclass",
                  invert = False,
                  **kwargs: Any) -> None:
@@ -15,7 +16,7 @@ class CalibrationAuroc(BinaryAUROC):
         #  Calibration AUC
         # and here:
         # https://papers.nips.cc/paper/2020/file/d3d9446802a44259755d38e6d163e820-Paper.pdf
-        super().__init__(**kwargs)
+        super().__init__(num_classes=num_classes, **kwargs)
         self.invert = invert
         if mode == "multiclass":
             self.eq_calc = self.multiclass_eq_calc

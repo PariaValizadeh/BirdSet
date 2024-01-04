@@ -58,6 +58,7 @@ metrics:
       num_classes: ${datamodule.dataset.n_classes}
     calibration_auroc:
       _target_: src.modules.metrics.calibrationauc.CalibrationAuroc
+      num_classes: ${datamodule.dataset.n_classes}
       mode: "multiclass"
       invert: False
 
