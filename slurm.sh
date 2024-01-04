@@ -2,16 +2,12 @@
 #SBATCH --job-name=embed_birdnet
 #SBATCH --output=embed_birdnet.log
 #SBATCH --ntasks=1
-#SBATCH --mem=16GB
-#SBATCH --cpus-per-task=4
-#SBATCH --partition=jupyter
+#SBATCH --mem=32GB
+#SBATCH --cpus-per-task=8
+#SBATCH --partition=main
 #SBATCH --gres=gpu:1
 
-echo "DATE:$(date)"
-echo "HOST:$(hostname)"
-echo "WORK_DIR:$(pwd)"
-
-#date;hostname;pwd
+date;hostname;pwd
 source /mnt/stud/home/mrichert/.zshrc
 conda activate gadme
 cd /mnt/stud/home/mrichert/Projects/GADME-BaselineResults-BA/src
