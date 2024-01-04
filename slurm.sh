@@ -6,6 +6,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --partition=main
 #SBATCH --gres=gpu:1
+#SBATCH --signal=SIGUSR1@90
 
 date;hostname;pwd
 source /mnt/stud/home/mrichert/.zshrc
