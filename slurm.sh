@@ -3,10 +3,9 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
-#SBATCH --partition=main
+#SBATCH --partition=dev
 #SBATCH --job-name=high_sierras_embed_birdnet
 #SBATCH --array=1-5%5
-#SBATCH --partition=main
 date;hostname;pwd
 source /mnt/stud/home/mrichert/.zshrc
 conda activate gadme
