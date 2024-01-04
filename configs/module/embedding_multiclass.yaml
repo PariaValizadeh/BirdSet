@@ -59,6 +59,7 @@ metrics:
     calibration_auroc:
       _target_: src.modules.metrics.calibrationauc.CalibrationAuroc
       mode: "multiclass"
+      invert: False
 
 
 output_activation: 

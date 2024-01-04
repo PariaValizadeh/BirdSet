@@ -8,6 +8,7 @@ from torchmetrics.classification import BinaryAUROC, MultilabelAUROC
 class CalibrationAuroc(BinaryAUROC):
     def __init__(self, 
                  mode: Literal["multilabel", "multiclass"] = "multiclass",
+                 invert = False,
                  **kwargs: Any) -> None:
         # see here:
         # https://github.com/google/uncertainty-baselines/blob/master/baselines/toxic_comments/metrics.py
@@ -15,6 +16,7 @@ class CalibrationAuroc(BinaryAUROC):
         # and here:
         # https://papers.nips.cc/paper/2020/file/d3d9446802a44259755d38e6d163e820-Paper.pdf
         super().__init__(**kwargs)
+        self.invert = invert
         if mode == "multiclass":
             self.eq_calc = self.multiclass_eq_calc
         elif mode == "multilabel":
@@ -25,19 +27,16 @@ class CalibrationAuroc(BinaryAUROC):
             raise ValueError(f"There was something wrong with {mode}")
     
     def update(self, preds: torch.Tensor, target: torch.Tensor) -> Any:
-        if preds.shape != target.shape:
-            print(f"Preds: {preds.shape}, target: {target.shape}")
-        assert preds.shape == target.shape
         u_score = self.calculate_u_score(preds)
         eq = self.multiclass_eq_calc(preds, target)
         return super().update(u_score, eq)
     
     def multiclass_eq_calc(self, preds, target):
         # this creates the "hard" predictions
-        one_preds = torch.round(preds)
-        
+        one_preds = torch.max(preds, 1, True).indices
         inv_eq = torch.eq(one_preds, target)
-        eq = inv_eq == False
+        if not self.invert:
+            eq = inv_eq == False
         eq.long()
         return eq
     
@@ -54,12 +53,22 @@ class CalibrationAuroc(BinaryAUROC):
         return uncertainty_score
 
 class MultilabelCalibrationAuroc(MultilabelAUROC):
-    def __init__(self, num_labels: int, average: Literal['micro', 'macro', 'weighted', 'none'] | None = "macro", thresholds: int | List[float] | Tensor | None = None, ignore_index: int | None = None, validate_args: bool = True, **kwargs: Any) -> None:
+    def __init__(self, num_labels: int, average: Literal['micro', 'macro', 'weighted', 'none'] | None = "macro", thresholds: int | List[float] | Tensor | None = None, ignore_index: int | None = None, validate_args: bool = True, invert:bool = False, **kwargs: Any) -> None:
         super().__init__(num_labels, average, thresholds, ignore_index, validate_args, **kwargs)
+        self.invert = invert
         
     def update(self, preds: Tensor, target: Tensor) -> None:
         u = self.calculate_u_score(preds)
-        return super().update(preds, target)
+        eq = self.calc_eq(preds, target)
+        return super().update(u, eq)
+    
+    def calc_eq(self, preds:Tensor, target:Tensor):
+        one_preds = torch.round(preds)
+        inv_eq = torch.eq(one_preds, target)
+        if not self.invert:
+            eq = inv_eq == False
+        eq.long()
+        return eq
     
     def calculate_u_score(self, preds: torch.Tensor):
         # uncertainty = preds x (1 - preds)
