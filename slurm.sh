@@ -14,4 +14,4 @@ conda activate gadme
 cd /mnt/stud/home/mrichert/Projects/GADME-BaselineResults-BA/src
 export CUDA_LAUNCH_BLOCKING=1
 export HYDRA_FULL_ERROR=1
-srun python -u main.py experiment=s_high_sierras_embed_birdnet_multilabel trainer=single_gpu paths=server
+srun python -u main.py experiment=s_high_sierras_embed_birdnet_multilabel trainer=server paths=server
