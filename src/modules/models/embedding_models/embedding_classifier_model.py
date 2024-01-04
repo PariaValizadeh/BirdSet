@@ -11,6 +11,8 @@ class EmbeddingClassifier(nn.Module):
         # device is necessary as the embedding model is most likely to run on the cpu (due to tensorflow integration)
         # -> numpy arrays are passed to the cpu, fed into tensorflow, and afterwards transferred to the gpu again
         super().__init__()
+        if device == "gpu":
+            device = "cuda"
         self.embedding_model = embedding_model
         self.num_classes = num_classes
         self.linear = nn.Linear(in_features=self.embedding_model.embedding_dimension, out_features=num_classes)
