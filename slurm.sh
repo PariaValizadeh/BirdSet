@@ -3,7 +3,6 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=4
-#SBATCH --gres=gpu:1
 #SBATCH --partition=dev
 
 date;hostname;pwd
