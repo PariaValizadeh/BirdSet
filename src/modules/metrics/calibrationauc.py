@@ -3,9 +3,9 @@ from typing_extensions import Literal
 import torch
 from torch import Tensor
 from torchmetrics import Metric
-from torchmetrics.classification import MulticlassAUROC, MultilabelAUROC
+from torchmetrics.classification import BinaryAUROC, MultilabelAUROC
 
-class CalibrationAuroc(MulticlassAUROC):
+class CalibrationAuroc(BinaryAUROC):
     def __init__(self, 
                  num_classes:int,
                  mode: Literal["multilabel", "multiclass"] = "multiclass",
@@ -16,16 +16,8 @@ class CalibrationAuroc(MulticlassAUROC):
         #  Calibration AUC
         # and here:
         # https://papers.nips.cc/paper/2020/file/d3d9446802a44259755d38e6d163e820-Paper.pdf
-        super().__init__(num_classes=num_classes, **kwargs)
+        super().__init__(**kwargs)
         self.invert = invert
-        if mode == "multiclass":
-            self.eq_calc = self.multiclass_eq_calc
-        elif mode == "multilabel":
-            raise ValueError("Multilabel is unsupported!")
-            self.eq_calc = self.multilabel_eq_calc
-            task = "multilabel"
-        else:
-            raise ValueError(f"There was something wrong with {mode}")
     
     def update(self, preds: torch.Tensor, target: torch.Tensor) -> Any:
         u_score = self.calculate_u_score(preds)
