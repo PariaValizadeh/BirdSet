@@ -23,7 +23,7 @@ import typing
 from src.modules.models.embedding_models.perch import path_utils
 from src.modules.models.embedding_models.perch.taxonomy import namespace
 
-TAXONOMY_DATABASE_FILENAME = "taxonomy/taxonomy_database.json"
+TAXONOMY_DATABASE_FILENAME = "taxonomy/taxonomy_database.jsondb"
 
 @dataclasses.dataclass
 class TaxonomyDatabase:
