@@ -3,7 +3,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=4
-#SBATCH --partition=main
+#SBATCH --partition=jupyter
 
 date;hostname;pwd
 source /mnt/stud/home/mrichert/.zshrc
