@@ -16,7 +16,7 @@ astunparse==1.6.3
 async-lru==2.0.4
 async-timeout==4.0.3
 attrs==23.1.0
-audiomentations==0.33.0
+#audiomentations==0.33.0
 audioread==3.0.1
 autopage==0.5.2
 Babel==2.13.1
@@ -29,12 +29,12 @@ certifi==2023.7.22
 cffi==1.16.0
 cfgv==3.4.0
 charset-normalizer==3.3.2
-chex==0.1.7
+#chex==0.1.7
 cleo==2.1.0
 click==8.1.7
 cliff==4.3.0
 cloudpickle==2.2.1
-clu==0.0.10
+#clu==0.0.10
 cmaes==0.10.0
 cmd2==2.4.3
 coloredlogs==15.0.1
