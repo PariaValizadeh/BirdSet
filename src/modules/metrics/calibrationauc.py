@@ -30,6 +30,8 @@ class CalibrationAuroc(BinaryAUROC):
         inv_eq = torch.eq(one_preds, target)
         if not self.invert:
             eq = inv_eq == False
+        else:
+            eq = inv_eq
         eq.long()
         return eq
     
