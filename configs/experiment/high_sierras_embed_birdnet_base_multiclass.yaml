@@ -9,7 +9,7 @@ defaults:
   - override /trainer: default.yaml
 
 
-tags: ["mr", "birdnet", "multilabel", "embedding"]
+tags: ["mr", "birdnet", "multiclass", "embedding"]
 seed: 42
 
 # module:
