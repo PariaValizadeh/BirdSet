@@ -54,6 +54,18 @@ metrics:
       sample_threshold: 5
       average: macro
       thresholds: null
+    calibration_auroc:
+      _target_: src.modules.metrics.calibrationauc.MultilabelCalibrationAuroc
+      num_labels: ${datamodule.dataset.n_classes}
+      average: "macro"
+      thresholds: null
+      ignore_index: null
+      validate_args: True
+      invert: False
+    calibration_error:
+      _target_: torchmetrics.classification.BinaryCalibrationError
+      n_bins: ${datamodule.dataset.n_classes}
+      norm: "l1"
 
 output_activation: 
   _target_: "torch.sigmoid"
