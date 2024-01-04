@@ -1,11 +1,11 @@
-#!/usr/bin/zsh
-#SBATCH --mem=32gb
+#!/bin/bash
+#SBATCH --job-name=high_sierras_embed_birdnet
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --mem=16GB
+#SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
 #SBATCH --partition=dev
-#SBATCH --job-name=high_sierras_embed_birdnet
-#SBATCH --array=1-5%5
+
 date;hostname;pwd
 source /mnt/stud/home/mrichert/.zshrc
 conda activate gadme
