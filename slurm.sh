@@ -8,7 +8,7 @@
 #SBATCH --array=1-5%5
 date;hostname;pwd
 source /mnt/stud/home/mrichert/.zshrc
-conda activate 5gadme
+conda activate gadme
 cd /mnt/stud/home/mrichert/Projects/GADME-BaselineResults-BA/src
 export CUDA_LAUNCH_BLOCKING=1
 export HYDRA_FULL_ERROR=1
