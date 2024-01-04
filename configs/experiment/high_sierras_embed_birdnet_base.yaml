@@ -23,6 +23,7 @@ trainer:
 datamodule:
   dataset:
     val_split: 0.2
+    num_workers: 1
   loaders:
     train:
       batch_size: 4
