@@ -35,3 +35,25 @@ class EmbeddingClassifier(nn.Module):
     @torch.inference_mode()
     def get_representations(self, dataloader, device):
         pass 
+
+class EmbeddingModel(nn.Module):
+    def __init__(self, num_classes, embedding_dimension) -> None:
+        super().__init__()
+        self.num_classes = num_classes
+        self.linear = nn.Linear(in_features=embedding_dimension, out_features=num_classes)
+    
+    def forward(self, input_embeddings) -> Any:
+        logits = self.linear(input_embeddings)
+        return logits
+    
+    @torch.inference_mode()
+    def get_logits(self, dataloader, device):
+        pass
+
+    @torch.inference_mode()
+    def get_probas(self, dataloader, device):
+        pass
+
+    @torch.inference_mode()
+    def get_representations(self, dataloader, device):
+        pass 

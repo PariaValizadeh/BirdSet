@@ -21,8 +21,9 @@ class TfEmbeddingModel(nn.Module):
         inference = self.tf_model(input_values)
         embeddings = inference.embeddings
         embeddings = self.transform_embeddings(embeddings)
-        embeddings = torch.from_numpy(embeddings).to(device)
-        return embeddings
+        if device is None:
+            return torch.from_numpy(embeddings)
+        return torch.from_numpy(embeddings).to(device)
     
     def forward_logits(self, input_values, device):
         input_values = input_values.cpu()
