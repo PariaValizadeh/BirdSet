@@ -98,8 +98,6 @@ class OfflineGADMEDataModule(GADMEDataModule):
         return dataset
     
     def _preprocess_multilabel(self, dataset):
-        print(dataset)
-        assert False
         dataset = DatasetDict({split: dataset[split] for split in ["train", "test_5s"]})
 
         dataset = dataset.map(
