@@ -42,8 +42,9 @@ class EmbeddingModel(nn.Module):
         self.num_classes = num_classes
         self.linear = nn.Linear(in_features=embedding_dimension, out_features=num_classes)
     
-    def forward(self, input_embeddings) -> Any:
-        logits = self.linear(input_embeddings)
+    def forward(self, input_values, **kwargs) -> Any:
+        # input_values are the embeddings!
+        logits = self.linear(input_values)
         return logits
     
     @torch.inference_mode()
