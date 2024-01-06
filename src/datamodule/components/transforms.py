@@ -70,21 +70,29 @@ class BaseTransforms:
         1. Applies Event Decoding (almost always)
         2. Applies feature extraction with FeatureExtractor
         """
+        batch = self.transform_batch(batch)
+        
+        values = self.transform_values(batch)
+        
+        labels = self.transform_labels(batch)
+
+        return {"input_values": values, "labels": labels}
+    
+    def transform_batch(self, batch):
         # we overwrite the feature extractor with None because we can do this here manually 
         # this is quite complicated if we want to make adjustments to non bird methods
         if self.event_decoder is not None: 
             batch = self.event_decoder(batch)
-
-        #----
-        # Feature extractor
-        #----
         
+        return batch
+    
+    def transform_values(self, batch):
         if not "audio" in batch.keys():
             raise ValueError(f"There is no audio in batch {batch.keys()}")
         
         # audio collating and padding
         waveform_batch = [audio["array"] for audio in batch["audio"]]
-
+        
         # extract/pad/truncate
         # max_length determains the difference with input waveforms as factor 5 (embedding)
         max_length = int(int(self.sampling_rate) * int(self.max_length)) #!TODO: how to determine 5s
@@ -95,15 +103,18 @@ class BaseTransforms:
             truncation=True,
             return_attention_mask=True
         )
-        # print(batch)
+        
         
         attention_mask = waveform_batch["attention_mask"]
         # i dont know why it was unsqueezed earlier, but this solves the problem of dimensionality (is now the same, if you augment further or not...)
         # waveform_batch = waveform_batch["input_values"].unsqueeze(1)
         waveform_batch = waveform_batch["input_values"]
         
-        audio_augmented = self.augment_waveform_batch(waveform_batch, attention_mask, batch)
-        
+        audio_augmented = self.augment_waveform_batch(waveform_batch, attention_mask, batch)        
+        return audio_augmented
+    
+    def transform_labels(self, batch):
+        # print(batch)
         if self.task == "multiclass":
             labels = batch["labels"]
         
@@ -111,8 +122,8 @@ class BaseTransforms:
             # self.task == "multilabel"
             # datatype of labels must be float32 to support BCEWithLogitsLoss
             labels = torch.tensor(batch["labels"], dtype=torch.float32)
-
-        return {"input_values": audio_augmented, "labels": labels}
+        
+        return labels
     
     def augment_waveform_batch(self, waveform_batch, attention_mask, batch):
         """
@@ -363,3 +374,22 @@ class TransformsWrapper(BaseTransforms):
             self.spec_aug = None
             self.background_noise = None
         return
+    
+class EmbeddingTransforms(BaseTransforms):
+    def __init__(self, task: Literal['multiclass', 'multilabel'] = "multiclass", sampling_rate: int = 3200, max_length: int = 5, decoding: EventDecoding | None = None, feature_extractor: DefaultFeatureExtractor | None = None) -> None:
+        super().__init__(task, sampling_rate, max_length, decoding, feature_extractor)
+    
+    def _transform(self, batch):
+        embeddings = [embedding for embedding in batch["embeddings"]]
+        
+        embeddings = torch.tensor(embeddings)
+        
+        if self.task == "multiclass":
+            labels = batch["labels"]
+        
+        else:
+            # self.task == "multilabel"
+            # datatype of labels must be float32 to support BCEWithLogitsLoss
+            labels = torch.tensor(batch["labels"], dtype=torch.float32)
+
+        return {"input_values": embeddings, "labels": labels}
