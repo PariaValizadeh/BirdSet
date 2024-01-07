@@ -11,17 +11,13 @@ class_weights_loss: ${datamodule.dataset.class_weights_loss}
 # Adam, BCELoss and Sigmoid
 optimizer:
   _target_: torch.optim.Adam
-  lr: 1e-5
+  lr: 1e-3
 
 loss:
   _target_: torch.nn.BCEWithLogitsLoss
   
-lr_scheduler:
-  scheduler:
-    _target_: transformers.get_linear_schedule_with_warmup
-  extras:
-    interval: step
-    warmup_ratio: 0.05
+lr_scheduler: 
+  is: null
 
 metrics: 
   main: 

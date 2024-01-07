@@ -3,13 +3,13 @@
 defaults:
   - override /datamodule: high_sierras.yaml
   - override /datamodule/transforms: embedding_transform.yaml
-  - override /module: embedding_multiclass.yaml
+  - override /module: embedding_multilabel.yaml
   - override /module/network: embedding.yaml
   - override /callbacks: default.yaml 
   - override /trainer: default.yaml
 
 
-tags: ["mr", "birdnet", "multiclass", "embedding"]
+tags: ["mr", "birdnet", "multilabel", "embedding"]
 seed: 42
 
 # module:
@@ -33,10 +33,10 @@ datamodule:
     test:
       batch_size: 256
   transforms:
-    max_length: 3.0
+    max_length: 5.0
 
 logger:
   wandb:
     tags: ${tags}
-    group: "hsn"
+    group: "high_sierras_embed_perch"
     mode: online

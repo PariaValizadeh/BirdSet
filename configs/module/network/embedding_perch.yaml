@@ -1,0 +1,13 @@
+# defaults:
+#   - model/embedding_model: birdnet_model.yaml
+
+
+model:
+  _target_: src.modules.models.embedding_models.embedding_classifier_model.EmbeddingModel
+  num_classes: ${datamodule.dataset.n_classes}
+  embedding_dimension: 1280
+
+model_name: Embedding_Perch_v4
+model_type: raw
+torch_compile: False
+sampling_rate: 32_000
