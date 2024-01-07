@@ -3,7 +3,6 @@ _target_: src.datamodule.gadme_datamodule.GADMEDataModule
 defaults:
   - _self_
   - transforms: bird_default.yaml
-  - feature_extractor: default_aug.yaml
   - loaders: default.yaml
 
 dataset:
