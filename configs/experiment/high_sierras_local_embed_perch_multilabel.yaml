@@ -4,12 +4,12 @@ defaults:
   - override /datamodule: high_sierras.yaml
   - override /datamodule/transforms: embedding_transform.yaml
   - override /module: embedding_multilabel.yaml
-  - override /module/network: embedding.yaml
+  - override /module/network: embedding_perch.yaml
   - override /callbacks: default.yaml 
   - override /trainer: default.yaml
 
 
-tags: ["mr", "birdnet", "multilabel", "embedding"]
+tags: ["mr", "perch", "multilabel", "embedding"]
 seed: 42
 
 # module:
