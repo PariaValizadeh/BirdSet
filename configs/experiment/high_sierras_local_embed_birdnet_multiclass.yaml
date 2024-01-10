@@ -38,5 +38,5 @@ datamodule:
 logger:
   wandb:
     tags: ${tags}
-    group: "high_sierras_embed_birdnet"
+    group: "high_sierras_embed_birdnet_multiclass"
     mode: online
