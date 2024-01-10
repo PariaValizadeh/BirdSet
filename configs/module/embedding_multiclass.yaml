@@ -8,18 +8,14 @@ task: multiclass
 class_weights_loss: ${datamodule.dataset.class_weights_loss}
 
 optimizer:
-  _target_: torch.optim.Adam
-  lr: 1e-5
+  _target_: torch.optim.AdamW
+  lr: 1e-3
 
 loss:
   _target_: torch.nn.CrossEntropyLoss
   
 lr_scheduler:
-  scheduler:
-    _target_: transformers.get_linear_schedule_with_warmup
-  extras:
-    interval: step
-    warmup_ratio: 0.05
+  is: null
 
 metrics: 
   main: 
@@ -51,16 +47,19 @@ metrics:
     #   num_labels: ${datamodule.dataset.n_classes}
     #   average: "macro"
     #   thresholds: null
-  eval_complete:
-    ece:
-      _target_: torchmetrics.classification.MulticlassCalibrationError
-      norm: l1
-      num_classes: ${datamodule.dataset.n_classes}
-    calibration_auroc:
-      _target_: src.modules.metrics.calibrationauc.CalibrationAuroc
-      num_classes: ${datamodule.dataset.n_classes}
-      mode: "multiclass"
-      invert: True
+  # eval_complete:
+  #   pcmap:
+  #     _target_: src.modules.metrics.pcmAP
+  #     num_labels: ${datamodule.dataset.n_classes}
+  #     padding_factor: 5
+  #     average: macro
+  #     thresholds: null
+  #   cmap5:
+  #     _target_: src.modules.metrics.cmAP
+  #     num_labels: ${datamodule.dataset.n_classes}
+  #     sample_threshold: 5
+  #     average: macro
+  #     thresholds: null
 
 
 output_activation: 
