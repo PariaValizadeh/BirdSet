@@ -62,7 +62,7 @@ class MultilabelCalibrationAuroc(MultilabelAUROC):
         inv_eq = torch.eq(one_preds, target)
         if not self.invert:
             eq = inv_eq == False
-        eq.long()
+        eq = eq.long()
         return eq
     
     def calculate_u_score(self, preds: torch.Tensor):
