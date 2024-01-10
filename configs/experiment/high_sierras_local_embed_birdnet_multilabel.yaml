@@ -39,4 +39,4 @@ logger:
   wandb:
     tags: ${tags}
     group: "high_sierras_embed_birdnet"
-    mode: online
+    mode: offline
