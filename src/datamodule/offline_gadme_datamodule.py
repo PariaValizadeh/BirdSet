@@ -24,6 +24,7 @@ class OfflineGADMEDataModule(GADMEDataModule):
         embedding_model_name: Literal["Embedding_Yamnet", "Embedding_Perch", "Embedding_VGGish", "Embedding_BirdNet_v2_4"] = "Embedding_BirdNet_v2_4"):
         super().__init__(dataset, loaders, transforms, mapper)
         self.embedding_model_name = embedding_model_name
+        logging.info(f"Using offline dataset for model {embedding_model_name}")
     
     def _load_data(self, decode: bool = False):
         laod_path = join(self.dataset_config.data_dir, "embeddings", self.dataset_config.dataset_name, self.embedding_model_name)
