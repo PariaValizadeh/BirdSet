@@ -1,4 +1,7 @@
+from typing import Any, List, Optional, Union
+from typing_extensions import Literal
 import torch
+from torch import Tensor
 import torchmetrics
 from torchmetrics.classification.average_precision import MultilabelAveragePrecision
 
@@ -74,3 +77,16 @@ class T1Accuracy(torchmetrics.Metric):
     def compute(self):
         return self.correct.float() / self.total
 
+class mAP(MultilabelAveragePrecision):
+    def __init__(self, num_labels: int, average: Literal['micro', 'macro', 'weighted', 'none'] | None = "macro", thresholds: int | List[float] | Tensor | None = None, ignore_index: int | None = None, validate_args: bool = True, **kwargs: Any) -> None:
+        super().__init__(num_labels, average, thresholds, ignore_index, validate_args, **kwargs)
+    
+    # def __call__(self, preds, target, **kwds: Any) -> Any:
+    #     ap = super().__call__(preds, target, **kwds)
+    #     map = torch.mean(ap)
+    #     return map
+    
+    def compute(self) -> Tensor:
+        ap = super().compute()
+        map = torch.mean(ap)
+        return map
