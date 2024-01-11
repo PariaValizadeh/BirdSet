@@ -168,6 +168,7 @@ class BaseDataModuleHF(L.LightningDataModule):
         )
         logging.info(f"Saving to disk: {data_path}")
         dataset.save_to_disk(data_path)
+        dataset.cleanup_cache_files()
 
     def _ensure_train_test_splits(self, dataset: Dataset | DatasetDict) -> DatasetDict:
         if isinstance(dataset, Dataset):
@@ -286,6 +287,7 @@ class BaseDataModuleHF(L.LightningDataModule):
         )
 
         dataset = load_from_disk(dataset_path)
+        dataset.cleanup_cache_files()
 
         self.transforms.set_mode(split)
 
@@ -345,3 +347,12 @@ class BaseDataModuleHF(L.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, **asdict(self.loaders_config.test)) # type: ignore
+    
+    def dispose(self):
+        self.dispose_dataset(self.train_dataset)
+        self.dispose_dataset(self.test_dataset)
+        self.dispose_dataset(self.val_dataset)
+        
+    def dispose_dataset(self, dataset:Dataset):
+        if dataset is not None:
+            dataset.cleanup_cache_files()

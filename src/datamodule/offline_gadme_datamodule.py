@@ -38,6 +38,7 @@ class filter():
         entry = x[self.label_column]
         if isinstance(entry, list):
             entry = self.revert_one_hot(entry)
+        assert entry in self.class_dict.keys()
         if entry in self.class_dict.keys():
             if self.class_dict[entry] < self.k:
                 self.class_dict[entry] = self.class_dict[entry]+1
@@ -167,11 +168,12 @@ class OfflineGADMEDataModule(GADMEDataModule):
             return self._create_k_split(dataset)
     
     def _create_k_split(self, dataset: DatasetDict | Dataset):
+        dataset.cleanup_cache_files()
         k = self.split_mode
         if isinstance(dataset, Dataset):
             test_size = 0.2*self.dataset_config.val_split
             train_test = dataset.train_test_split(test_size=test_size, shuffle=True, seed=self.dataset_config.seed)
-            train, valid = self.create_split(k, train_test["train", False])
+            train, valid = self.create_split(k, train_test["train"], False)
             return DatasetDict({"train": train, "valid": valid, "test": train_test["test"]})
         elif isinstance(dataset, DatasetDict):
             # this is probably the default
@@ -180,7 +182,7 @@ class OfflineGADMEDataModule(GADMEDataModule):
                 return dataset
             if "train" in dataset.keys() and "test" in dataset.keys():
                 # we need to split here!
-                train, valid = self.create_split(k, dataset["train"], shuffle=True)
+                train, valid = self.create_split(k, dataset["train"], True)
                 return DatasetDict({"train": train, "valid": valid, "test": dataset["test"]})
             # if dataset has only one key, split it into train, valid, test
             elif "train" in dataset.keys() and "test" not in dataset.keys():
@@ -191,9 +193,14 @@ class OfflineGADMEDataModule(GADMEDataModule):
     def create_split(self, k, dataset: Dataset, shuffle:bool=False):
         if shuffle:
             dataset = dataset.shuffle(seed=self.dataset_config.seed)
+        # print(dataset)
         c_numbers = self.dataset_config.n_classes
         f = filter(c_numbers, k, "labels", "train")
         train = dataset.filter(f, with_indices=True)
+        # print(train)
         f.set_mode("valid")
         valid = dataset.filter(f, with_indices=True)
+        # print(valid)
+        if len(dataset) != (len(train) + len(valid)):
+            raise ValueError(f"dataset with length {len(dataset)} does not equal sum of train {len(train)} and valid {len(valid)}")
         return train, valid

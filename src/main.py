@@ -117,6 +117,8 @@ def main(cfg):
 
     metric_dict = {**train_metrics, **test_metrics}
     
+    datamodule.dispose()
+    
     utils.close_loggers()
 
 if __name__ == "__main__":    
