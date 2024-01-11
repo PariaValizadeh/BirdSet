@@ -10,7 +10,7 @@ defaults:
 
 
 tags: ["mr", "perch", "multilabel", "embedding"]
-seed: 42
+seed: 1
 
 # module:
 #   optimizer:
@@ -23,6 +23,7 @@ trainer:
 datamodule:
   _target_: src.datamodule.offline_gadme_datamodule.OfflineGADMEDataModule
   embedding_model_name: ${module.network.model_name}
+  split_mode: 32
   dataset:
     val_split: 0.2
   loaders:
@@ -39,4 +40,4 @@ logger:
   wandb:
     tags: ${tags}
     group: "high_sierras_embed_perch"
-    mode: online
+    mode: offline

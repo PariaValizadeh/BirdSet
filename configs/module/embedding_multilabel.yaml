@@ -62,21 +62,35 @@ metrics:
       _target_: torchmetrics.classification.BinaryCalibrationError
       n_bins: ${datamodule.dataset.n_classes}
       norm: "l1"
-    oracle_model_collaborative_accuracy:
-      _target_: src.modules.metrics.oracle_model_collaborative_accuracy.OracleModelCollaborativeAccuracy
-      alpha_in_percent: 0.05
-      num_labels: ${datamodule.dataset.n_classes}
-    oracle_model_collaborative_auroc:
-      _target_: src.modules.metrics.oracle_model_collaborative_accuracy.OracleModelCollaborativeAUROC
-      alpha_in_percent: 0.05
+    map:
+      _target_: src.modules.metrics.multilabel.mAP
       num_labels: ${datamodule.dataset.n_classes}
       average: "macro"
       thresholds: null
       ignore_index: null
       validate_args: True
-    rejection_accuracy:
-      _target_: src.modules.metrics.rejection_rate.RejectionAccuracy
-      rejection_rate_in_percent: 0.1
+    ap:
+      _target_: torchmetrics.classification.MultilabelAveragePrecision
+      num_labels: ${datamodule.dataset.n_classes}
+      average: "macro"
+      thresholds: null
+      ignore_index: null
+      validate_args: True
+    # oracle_model_collaborative_accuracy:
+    #   _target_: src.modules.metrics.oracle_model_collaborative_accuracy.OracleModelCollaborativeAccuracy
+    #   alpha_in_percent: 0.05
+    #   num_labels: ${datamodule.dataset.n_classes}
+    # oracle_model_collaborative_auroc:
+    #   _target_: src.modules.metrics.oracle_model_collaborative_accuracy.OracleModelCollaborativeAUROC
+    #   alpha_in_percent: 0.05
+    #   num_labels: ${datamodule.dataset.n_classes}
+    #   average: "macro"
+    #   thresholds: null
+    #   ignore_index: null
+    #   validate_args: True
+    # rejection_accuracy:
+    #   _target_: src.modules.metrics.rejection_rate.RejectionAccuracy
+    #   rejection_rate_in_percent: 0.1
     # rejection_auroc:
     #   _target_: src.modules.metrics.rejection_rate.RejectionAUROC
     #   rejection_rate_in_percent: 0.1

@@ -10,7 +10,7 @@ defaults:
 
 
 tags: ["mr", "birdnet", "multilabel", "embedding"]
-seed: 42
+seed: 1
 
 # module:
 #   optimizer:
