@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Any
 from collections import Counter
 from src.datamodule.components.transforms import BaseTransforms
 from src.datamodule.components.event_decoding import EventDecoding
@@ -6,12 +6,54 @@ from src.datamodule.components.transforms import BaseTransforms, EmbeddingTransf
 from src.datamodule.components.event_mapping import XCEventMapping
 from src.datamodule.gadme_datamodule import GADMEDataModule
 from .base_datamodule import BaseDataModuleHF, DatasetConfig, LoadersConfig
-from datasets import load_dataset, load_from_disk, Audio, DatasetDict, Dataset, IterableDataset, IterableDatasetDict
+from datasets import load_dataset, load_from_disk, Audio, DatasetDict, Dataset, IterableDataset, IterableDatasetDict, Sequence
 import logging
 import torch
 import os
 
 from os.path import join
+
+
+class filter():
+    def __init__(self, class_numbers, k, label_column, mode:Literal["train", "valid"]) -> None:
+        self.mode = mode
+        self.k = k
+        self.label_column = label_column
+        self.class_dict = dict()
+        self.handled_idx = []
+        for name in range(class_numbers):
+            self.class_dict[name] = 0
+    
+    def set_mode(self, mode:Literal["train", "valid"]):
+        self.mode = mode
+    
+    def revert_one_hot(self, entry:list):
+        for i in range(len(entry)):
+            e = entry[i]
+            if e == 1:
+                return i
+        return 0
+    
+    def call_train(self, x, idx):
+        entry = x[self.label_column]
+        if isinstance(entry, list):
+            entry = self.revert_one_hot(entry)
+        if entry in self.class_dict.keys():
+            if self.class_dict[entry] < self.k:
+                self.class_dict[entry] = self.class_dict[entry]+1
+                self.handled_idx.append(idx)
+                return True
+        return False
+    
+    def __call__(self, x, idx,**kwds: Any) -> Any:
+        if self.mode == "train":
+            return self.call_train(x, idx)
+        elif self.mode == "valid":
+            if idx in self.handled_idx:
+                return False
+            return True
+        
+        raise ValueError("Mode not supported")
 
 # this class does not need a transforms!!!
 class OfflineGADMEDataModule(GADMEDataModule):
@@ -21,9 +63,11 @@ class OfflineGADMEDataModule(GADMEDataModule):
         loaders: LoadersConfig = LoadersConfig(), 
         transforms: BaseTransforms = EmbeddingTransforms(),
         mapper: XCEventMapping = XCEventMapping(),
-        embedding_model_name: Literal["Embedding_Yamnet", "Embedding_Perch_v4", "Embedding_VGGish", "Embedding_BirdNet_v2_4"] = "Embedding_BirdNet_v2_4"):
+        embedding_model_name: Literal["Embedding_Yamnet", "Embedding_Perch_v4", "Embedding_VGGish", "Embedding_BirdNet_v2_4"] = "Embedding_BirdNet_v2_4",
+        split_mode: int | None = None):
         super().__init__(dataset, loaders, transforms, mapper)
         self.embedding_model_name = embedding_model_name
+        self.split_mode = split_mode
         logging.info(f"Using offline dataset for model {embedding_model_name}")
     
     def _load_data(self, decode: bool = False):
@@ -115,4 +159,41 @@ class OfflineGADMEDataModule(GADMEDataModule):
         dataset["test"] = dataset["test_5s"]
         dataset = dataset.rename_column("ebird_code_multilabel", "labels")
         return dataset
-        
+
+    def _create_splits(self, dataset: DatasetDict | Dataset):
+        if self.split_mode is None or self.split_mode == 0:
+            return super()._create_splits(dataset)
+        else:
+            return self._create_k_split(dataset)
+    
+    def _create_k_split(self, dataset: DatasetDict | Dataset):
+        k = self.split_mode
+        if isinstance(dataset, Dataset):
+            test_size = 0.2*self.dataset_config.val_split
+            train_test = dataset.train_test_split(test_size=test_size, shuffle=True, seed=self.dataset_config.seed)
+            train, valid = self.create_split(k, train_test["train", False])
+            return DatasetDict({"train": train, "valid": valid, "test": train_test["test"]})
+        elif isinstance(dataset, DatasetDict):
+            # this is probably the default
+            if "train" in dataset.keys() and "valid" in dataset.keys() and "test" in dataset.keys():
+                # correct ds
+                return dataset
+            if "train" in dataset.keys() and "test" in dataset.keys():
+                # we need to split here!
+                train, valid = self.create_split(k, dataset["train"], shuffle=True)
+                return DatasetDict({"train": train, "valid": valid, "test": dataset["test"]})
+            # if dataset has only one key, split it into train, valid, test
+            elif "train" in dataset.keys() and "test" not in dataset.keys():
+                return self._create_splits(dataset["train"])
+            else: 
+                return self._create_splits(dataset[list(dataset.keys())[0]])    
+    
+    def create_split(self, k, dataset: Dataset, shuffle:bool=False):
+        if shuffle:
+            dataset = dataset.shuffle(seed=self.dataset_config.seed)
+        c_numbers = self.dataset_config.n_classes
+        f = filter(c_numbers, k, "labels", "train")
+        train = dataset.filter(f, with_indices=True)
+        f.set_mode("valid")
+        valid = dataset.filter(f, with_indices=True)
+        return train, valid
