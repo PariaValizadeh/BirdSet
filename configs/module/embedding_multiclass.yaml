@@ -41,25 +41,28 @@ metrics:
     # calibration_auroc:
     #   _target_: src.modules.metrics.calibrationauc.CalibrationAuroc
     #   mode: multiclass
-    # auroc:
-    #   _target_: "torchmetrics.classification.AUROC"
-    #   task: "multiclass"
-    #   num_labels: ${datamodule.dataset.n_classes}
-    #   average: "macro"
-    #   thresholds: null
+    auroc:
+      _target_: "torchmetrics.classification.AUROC"
+      task: "multiclass"
+      num_classes: ${datamodule.dataset.n_classes} 
+      average: "macro"
+      thresholds: null
   # eval_complete:
-  #   pcmap:
-  #     _target_: src.modules.metrics.pcmAP
-  #     num_labels: ${datamodule.dataset.n_classes}
-  #     padding_factor: 5
-  #     average: macro
-  #     thresholds: null
-  #   cmap5:
-  #     _target_: src.modules.metrics.cmAP
-  #     num_labels: ${datamodule.dataset.n_classes}
-  #     sample_threshold: 5
-  #     average: macro
-  #     thresholds: null
+    # pcmap:
+    #   _target_: src.modules.metrics.pcmAP
+    #   num_labels: ${datamodule.dataset.n_classes}
+    #   padding_factor: 5
+    #   average: macro
+    #   thresholds: null
+    # cmap5:
+    #   _target_: src.modules.metrics.cmAP
+    #   num_labels: ${datamodule.dataset.n_classes}
+    #   sample_threshold: 5
+    #   average: macro
+    #   thresholds: null
+    # map:
+    #   _target_: src.modules.metrics.multilabel.mAP
+    #   average: "micro"
 
 
 output_activation: 

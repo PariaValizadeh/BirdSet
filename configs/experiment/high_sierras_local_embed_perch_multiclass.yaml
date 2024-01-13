@@ -3,13 +3,13 @@
 defaults:
   - override /datamodule: high_sierras.yaml
   - override /datamodule/transforms: embedding_transform.yaml
-  - override /module: embedding_multilabel.yaml
+  - override /module: embedding_multiclass.yaml
   - override /module/network: embedding_perch.yaml
   - override /callbacks: default.yaml 
   - override /trainer: default.yaml
 
 
-tags: ["mr", "perch", "multilabel", "embedding"]
+tags: ["mr", "perch", "multiclass", "embedding"]
 seed: 42
 
 # module:
@@ -28,7 +28,7 @@ trainer:
 datamodule:
   _target_: src.datamodule.offline_gadme_datamodule.OfflineGADMEDataModule
   embedding_model_name: ${module.network.model_name}
-  split_mode: null
+  split_mode: 64
   dataset:
     val_split: 0.2
   loaders:
@@ -44,5 +44,5 @@ datamodule:
 logger:
   wandb:
     tags: ${tags}
-    group: "high_sierras_embed_perch_multilabel_s"
+    group: "high_sierras_embed_perch_multiclass"
     mode: offline
