@@ -10,7 +10,7 @@ defaults:
 
 
 tags: ["mr", "perch", "multilabel", "embedding"]
-seed: 1337
+seed: 42
 
 # module:
 #   optimizer:
@@ -20,9 +20,9 @@ trainer:
   min_epochs: 1
   max_epochs: 128
 
-module:
-  _target_: src.modules.mc_multilabel_module.MCDropoutModel
-  mc_iteration: 8
+# module:
+#   _target_: src.modules.mc_multilabel_module.MCDropoutModel
+#   mc_iteration: ${datamodule.dataset.n_classes}
 
 
 datamodule:
