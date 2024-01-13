@@ -162,6 +162,7 @@ class OfflineGADMEDataModule(GADMEDataModule):
         return dataset
 
     def _create_splits(self, dataset: DatasetDict | Dataset):
+        dataset.cleanup_cache_files()
         if self.split_mode is None or self.split_mode == 0:
             return super()._create_splits(dataset)
         else:
