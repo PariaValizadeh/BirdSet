@@ -10,7 +10,7 @@ defaults:
 
 
 tags: ["mr", "perch", "multilabel", "embedding"]
-seed: 1
+seed: 1337
 
 # module:
 #   optimizer:
@@ -20,10 +20,15 @@ trainer:
   min_epochs: 1
   max_epochs: 128
 
+module:
+  _target_: src.modules.mc_multilabel_module.MCDropoutModel
+  mc_iteration: 8
+
+
 datamodule:
   _target_: src.datamodule.offline_gadme_datamodule.OfflineGADMEDataModule
   embedding_model_name: ${module.network.model_name}
-  split_mode: 32
+  split_mode: null
   dataset:
     val_split: 0.2
   loaders:
