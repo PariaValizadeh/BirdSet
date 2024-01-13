@@ -52,8 +52,8 @@ class MultilabelCalibrationAuroc(MultilabelAUROC):
         super().__init__(num_labels, average, thresholds, ignore_index, validate_args, **kwargs)
         self.invert = invert
         
-    def update(self, preds: Tensor, target: Tensor) -> None:
-        u = self.calculate_u_score(preds)
+    def update(self, preds: Tensor, target: Tensor, unc:Tensor) -> None:
+        u = self.calculate_u_score(unc)
         eq = self.calc_eq(preds, target)
         return super().update(u, eq)
     
