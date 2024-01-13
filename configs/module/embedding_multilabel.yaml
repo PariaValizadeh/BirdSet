@@ -24,7 +24,7 @@ metrics:
     _target_: src.modules.metrics.cmAP
     num_labels: ${datamodule.dataset.n_classes}
     sample_threshold: 0
-    average: macro
+    average: "macro"
     thresholds: null
   val_best: 
     _target_: "torchmetrics.MaxMetric"
@@ -50,25 +50,9 @@ metrics:
       sample_threshold: 5
       average: macro
       thresholds: null
-    calibration_auroc:
-      _target_: src.modules.metrics.calibrationauc.MultilabelCalibrationAuroc
-      num_labels: ${datamodule.dataset.n_classes}
-      average: "macro"
-      thresholds: null
-      ignore_index: null
-      validate_args: True
-      invert: False
-    calibration_error:
-      _target_: torchmetrics.classification.BinaryCalibrationError
-      n_bins: ${datamodule.dataset.n_classes}
-      norm: "l1"
     map:
       _target_: src.modules.metrics.multilabel.mAP
-      num_labels: ${datamodule.dataset.n_classes}
-      average: "macro"
-      thresholds: null
-      ignore_index: null
-      validate_args: True
+      average: "micro"
     ap:
       _target_: torchmetrics.classification.MultilabelAveragePrecision
       num_labels: ${datamodule.dataset.n_classes}
@@ -76,6 +60,19 @@ metrics:
       thresholds: null
       ignore_index: null
       validate_args: True
+    calibration_error:
+      _target_: torchmetrics.classification.BinaryCalibrationError
+      n_bins: ${datamodule.dataset.n_classes}
+      norm: "l1"
+  calibration:
+    calibration_auroc:
+      _target_: src.modules.metrics.calibrationauc.MultilabelCalibrationAuroc
+      num_labels: ${datamodule.dataset.n_classes}
+      average: "micro"
+      thresholds: null
+      ignore_index: null
+      validate_args: True
+      invert: False
     # oracle_model_collaborative_accuracy:
     #   _target_: src.modules.metrics.oracle_model_collaborative_accuracy.OracleModelCollaborativeAccuracy
     #   alpha_in_percent: 0.05
