@@ -4,8 +4,8 @@ _target_: src.datamodule.gadme_datamodule.GADMEDataModule
 defaults:
   - _self_
   - transforms: bird_default.yaml
-  - extractors: default_aug.yaml
   - loaders: default.yaml
+  - mapper: xc_bambird_mapper.yaml
 
 dataset:
   data_dir: ${paths.dataset_path}
@@ -19,6 +19,6 @@ dataset:
   task: ${module.task}
   subset: null
   sampling_rate: ${module.network.sampling_rate}
-
-
+  class_weights_loss: null
+  class_weights_sampler: null
 
