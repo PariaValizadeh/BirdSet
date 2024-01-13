@@ -18,7 +18,7 @@ model:
     model_key: "taxonomy_model_tf"
 
 
-model_name: Embedding_Perch
+model_name: Embedding_Perch_v4
 model_type: raw
 torch_compile: False
 sampling_rate: ${module.network.model.embedding_model.sample_rate}
