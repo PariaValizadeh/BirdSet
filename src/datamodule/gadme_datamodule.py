@@ -58,19 +58,7 @@ class GADMEDataModule(BaseDataModuleHF):
             if self.dataset_config.class_weights_loss or self.dataset_config.class_weights_sampler:
                 self.num_train_labels = self._count_labels((dataset["train"]["ebird_code"]))
             
-            if self.dataset_config.classlimit and not self.dataset_config.eventlimit:
-                dataset["train"] = self._limit_classes(
-                    dataset=dataset["train"],
-                    label_name="ebird_code",
-                    limit=self.dataset_config.classlimit
-                )
-            elif self.dataset_config.classlimit or self.dataset_config.eventlimit:
-                dataset["train"] = self._smart_sampling(
-                    dataset=dataset["train"],
-                    label_name="ebird_code",
-                    class_limit=self.dataset_config.classlimit,
-                    event_limit=self.dataset_config.eventlimit
-                )
+            dataset = self.sample_dataset(dataset)
 
             dataset = dataset.rename_column("ebird_code", "labels")
 
@@ -122,4 +110,20 @@ class GADMEDataModule(BaseDataModuleHF):
             ["filepath", "labels", "detected_events", "start_time", "end_time"]
         )
 
+        return dataset
+
+    def sample_dataset(self, dataset):
+        if self.dataset_config.classlimit and not self.dataset_config.eventlimit:
+            dataset["train"] = self._limit_classes(
+                    dataset=dataset["train"],
+                    label_name="ebird_code",
+                    limit=self.dataset_config.classlimit
+                )
+        elif self.dataset_config.classlimit or self.dataset_config.eventlimit:
+            dataset["train"] = self._smart_sampling(
+                    dataset=dataset["train"],
+                    label_name="ebird_code",
+                    class_limit=self.dataset_config.classlimit,
+                    event_limit=self.dataset_config.eventlimit
+                )
         return dataset
