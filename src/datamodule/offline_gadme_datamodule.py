@@ -71,6 +71,25 @@ class OfflineGADMEDataModule(GADMEDataModule):
         self.split_mode = split_mode
         logging.info(f"Using offline dataset for model {embedding_model_name}")
     
+    def prepare_data(self):
+        logging.info("Check if preparing has already been done.")
+        if self._prepare_done:
+            logging.info("Skip preparing.")
+            return
+
+        logging.info("Prepare Data")
+
+        dataset = self._load_data()
+        dataset = self._preprocess_data(dataset)
+        dataset = self._create_splits(dataset)
+
+        # set the length of the training set to be accessed by the model
+        self.len_trainset = len(dataset["train"])        
+        self._save_dataset_to_disk(dataset)
+        
+        # set to done so that lightning does not call it again
+        self._prepare_done = True
+    
     def _load_data(self, decode: bool = False):
         laod_path = join(self.dataset_config.data_dir, "embeddings", self.dataset_config.dataset_name, self.embedding_model_name)
         logging.info(f"Attempting to load dataset from disk at {laod_path}")
@@ -152,6 +171,7 @@ class OfflineGADMEDataModule(GADMEDataModule):
             batch_size=300,
             load_from_cache_file=False,
             num_proc=self.dataset_config.n_workers,
+            fn_kwargs={"column_name": "ebird_code_multilabel"}
         )
 
         if self.dataset_config.class_weights_loss or self.dataset_config.class_weights_sampler:
