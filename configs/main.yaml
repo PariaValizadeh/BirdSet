@@ -2,15 +2,15 @@
 defaults:
   - _self_
   - datamodule: high_sierras
-  - module: embedding_multiclass
+  - module: embedding_multilabel
   - callbacks: default
-  - paths: default
+  - paths: laptop_local
   - trainer: single_gpu
   - logger: wandb
   - hydra: default
   - extras: default
 
-  - experiment: null
+  - experiment: high_sierras_local_embed_perch_multilabel
   - hparams_search: null
   - debug: null
 
