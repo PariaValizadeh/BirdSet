@@ -31,8 +31,7 @@ class DatasetConfig:
     sampling_rate: int = 32_000
     class_weights_loss = None
     class_weights_sampler = None
-    class_limit: int = None
-
+    classlimit: int | None = None
 
 @dataclass
 class LoaderConfig:
