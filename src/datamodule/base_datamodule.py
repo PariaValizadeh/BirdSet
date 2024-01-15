@@ -411,7 +411,7 @@ class BaseDataModuleHF(L.LightningDataModule):
 
         return dataset.select(limited_indices)
 
-    def _classes_one_hot(self, batch):
+    def _classes_one_hot(self, batch, column_name:str = "labels"):
         """
         Converts class labels to one-hot encoding.
 
@@ -424,7 +424,7 @@ class BaseDataModuleHF(L.LightningDataModule):
         Returns:
             dict: The batch with the "labels" field converted to one-hot encoding. The keys are the field names and the values are the field data.
         """
-        label_list = [y for y in batch["labels"]]
+        label_list = [y for y in batch[column_name]]
         class_one_hot_matrix = torch.zeros(
             (len(label_list), self.dataset_config.n_classes), dtype=torch.float
         )
@@ -433,7 +433,7 @@ class BaseDataModuleHF(L.LightningDataModule):
             class_one_hot_matrix[class_idx, idx] = 1
 
         class_one_hot_matrix = torch.tensor(class_one_hot_matrix, dtype=torch.float32)
-        return {"labels": class_one_hot_matrix}  
+        return {column_name: class_one_hot_matrix}  
         
     def train_dataloader(self):
         if self.dataset_config.class_weights_sampler is None: 
