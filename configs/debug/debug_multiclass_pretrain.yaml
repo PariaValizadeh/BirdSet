@@ -4,7 +4,7 @@ task_name: debug
 defaults:
   - override /module: multiclass.yaml
   - override /module/network: ast.yaml
-  - override /datamodule: high_sierras.yaml
+  - override /datamodule: xenocanto_m.yaml
   - override /callbacks: default.yaml 
   - override /trainer: single_gpu.yaml
 
@@ -18,10 +18,12 @@ hydra:
 
 seed: 2
 
+train: True
+test: False 
+
 module:
   optimizer:
     lr: 1e-5
-
 
 trainer: 
   max_epochs: 1
@@ -33,10 +35,10 @@ trainer:
 datamodule:
   dataset:
     val_split: 0.1
-    subset: null
+    subset: 50000
     n_workers: 1
-    class_weights_loss: False
-    class_weights_sampler: False
+    class_weights_loss: null
+    class_weights_sampler: null
   mapper: 
     event_limit: 5
     biggest_cluster: True
