@@ -25,7 +25,7 @@ datamodule:
     val_split: 0.2
   loaders:
     train:
-      batch_size: 12
+      batch_size: 1
       shuffle: True
       num_workers: 6
       drop_last: False
