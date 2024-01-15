@@ -22,7 +22,7 @@ dataset:
   class_weights_loss: null
   class_weights_sampler: null
   classlimit: 500 # soft maximum amount of samples per class
-  eventlimit: 5 # soft maximum amount of events from one sample per class
+  eventlimit: 1 # soft maximum amount of events from one sample per class
 
 
 
