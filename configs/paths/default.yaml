@@ -4,4 +4,5 @@ output_dir: ${hydra:runtime.output_dir}
 dataset_path: ${paths.root_dir}/data_gadme
 background_path: ${paths.root_dir}/data_gadme/background_noise/dcase18_unpacked_wav
 log_dir: ${paths.output_dir}/logs/
+model_dir: ${paths.root_dir}/tf_model/BirdNET_GLOBAL_6K_V2.4_Model_FP32.tflite # pass path to birdnet.tflite file
 
