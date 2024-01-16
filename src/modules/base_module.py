@@ -177,6 +177,10 @@ class BaseModule(L.LightningModule):
     
     def test_step(self, batch, batch_idx):
         test_loss, preds, targets = self.model_step(batch, batch_idx)
+        
+        #save targets and predictions for test_epoch_end
+        self.test_targets.append(targets.detach().cpu())
+        self.test_preds.append(preds.detach().cpu())
 
         self.log(
             f"test{self.loss.__class__.__name__}",
@@ -203,8 +207,15 @@ class BaseModule(L.LightningModule):
             self.model = torch.compile(self.model)
 
     def on_test_epoch_end(self):
-        pass
+        test_targets = torch.cat(self.test_targets).int()
+        test_preds = torch.cat(self.test_preds)
+        self.test_complete_metrics(test_preds, test_targets)
 
+        log_dict = {}
+        
+        for metric_name, metric in self.test_complete_metrics.named_children():
+            log_dict[f"test/{metric_name}"] = metric
 
+        self.log_dict(log_dict, **self.logging_params)
 
 

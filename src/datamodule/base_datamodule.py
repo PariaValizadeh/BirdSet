@@ -12,6 +12,7 @@ import numpy as np
 
 from datasets import load_dataset, load_from_disk, Audio, DatasetDict, Dataset, IterableDataset, IterableDatasetDict
 from torch.utils.data import DataLoader
+from src.datamodule.components.transforms import BaseTransforms
 from src.datamodule.components.event_mapping import XCEventMapping
 from src.datamodule.components.transforms import GADMETransformsWrapper
 
@@ -170,6 +171,7 @@ class BaseDataModuleHF(L.LightningDataModule):
         )
         logging.info(f"Saving to disk: {data_path}")
         dataset.save_to_disk(data_path)
+        dataset.cleanup_cache_files()
 
     def _ensure_train_test_splits(self, dataset: Dataset | DatasetDict) -> DatasetDict:
         if isinstance(dataset, Dataset):
@@ -288,6 +290,7 @@ class BaseDataModuleHF(L.LightningDataModule):
         )
 
         dataset = load_from_disk(dataset_path)
+        dataset.cleanup_cache_files()
 
         self.transforms.set_mode(split)
 
@@ -365,8 +368,56 @@ class BaseDataModuleHF(L.LightningDataModule):
 
         # Subset the dataset
         return dataset.select(limited_indices)
+    
+    def map(self, x, label_name):
+        file = x["filepath"]
+        label = x[label_name]
+        return {"id": f"{file}-{label}"}
+    
+    def _smart_sampling(self, dataset, label_name, class_limit, event_limit):
+        class_limit = class_limit if class_limit else -float("inf")
+        dataset = dataset.map(lambda x: self.map(x, label_name))
+        df = pd.DataFrame(dataset)
+        # df = df[df[label_name] != 0]
+        path_label_count = df.groupby(["id", label_name], as_index=False).size()
+        path_label_count = path_label_count.set_index("id")
+        class_sizes = df.groupby(label_name).size()
 
-    def _classes_one_hot(self, batch):
+        for label in class_sizes.index:
+            current = path_label_count[path_label_count[label_name] == label]
+            total = current["size"].sum()
+            most = current["size"].max()
+
+            while total > class_limit or most != event_limit:
+                largest_count = current["size"].value_counts()[current["size"].max()]
+                n_largest = current.nlargest(largest_count + 1, "size")
+                to_del = (n_largest["size"].max() - n_largest["size"].min())
+
+                idxs = n_largest[n_largest["size"] == n_largest["size"].max()].index
+                if total - (to_del * largest_count) < class_limit or most == event_limit or most == 1:
+                    break
+                for idx in idxs:
+                    current.at[idx, "size"] = current.at[idx, "size"] - to_del
+                    path_label_count.at[idx, "size"] = path_label_count.at[idx, "size"] - to_del
+
+                total = current["size"].sum()
+                most = current["size"].max()
+
+        event_counts = Counter(dataset["id"])
+
+        all_file_indices = {label: [] for label in event_counts.keys()}
+        for idx, label in enumerate(dataset["id"]):
+            all_file_indices[label].append(idx)
+
+        limited_indices = []
+        for file, indices in all_file_indices.items():
+            limit = path_label_count.loc[file]["size"]
+            limited_indices.extend(random.sample(indices, limit))
+            
+        dataset = dataset.remove_columns("id")
+        return dataset.select(limited_indices)
+
+    def _classes_one_hot(self, batch, column_name:str = "labels"):
         """
         Converts class labels to one-hot encoding.
 
@@ -379,7 +430,7 @@ class BaseDataModuleHF(L.LightningDataModule):
         Returns:
             dict: The batch with the "labels" field converted to one-hot encoding. The keys are the field names and the values are the field data.
         """
-        label_list = [y for y in batch["labels"]]
+        label_list = [y for y in batch[column_name]]
         class_one_hot_matrix = torch.zeros(
             (len(label_list), self.dataset_config.n_classes), dtype=torch.float
         )
@@ -388,7 +439,7 @@ class BaseDataModuleHF(L.LightningDataModule):
             class_one_hot_matrix[class_idx, idx] = 1
 
         class_one_hot_matrix = torch.tensor(class_one_hot_matrix, dtype=torch.float32)
-        return {"labels": class_one_hot_matrix}  
+        return {column_name: class_one_hot_matrix}  
         
     def train_dataloader(self):
         if self.dataset_config.class_weights_sampler is None: 
@@ -403,3 +454,12 @@ class BaseDataModuleHF(L.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, **asdict(self.loaders_config.test)) # type: ignore
+    
+    def dispose(self):
+        self.dispose_dataset(self.train_dataset)
+        self.dispose_dataset(self.test_dataset)
+        self.dispose_dataset(self.val_dataset)
+        
+    def dispose_dataset(self, dataset:Dataset):
+        if dataset is not None:
+            dataset.cleanup_cache_files()

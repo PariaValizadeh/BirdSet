@@ -86,8 +86,12 @@ def main(cfg):
             datamodule=datamodule,
             ckpt_path=cfg.get("ckpt_path"))
         #!TODO: check
-        model.model.model.save_pretrained(f"last_ckpt_hf") #triple model check
-    
+        if hasattr(model.model, "model"):
+            log.info("Saving pretrained model!")
+            model.model.model.save_pretrained(f"last_ckpt_hf") #triple model check
+        else:
+            log.error("Triple model check failed. model.model has no attribute model.\n continuing anyways...")
+
         train_metrics = trainer.callback_metrics
 
     if cfg.get("test"):
@@ -120,6 +124,8 @@ def main(cfg):
 
     
     #metric_dict = {**train_metrics, **test_metrics}
+    
+    datamodule.dispose()
     
     utils.close_loggers()
 

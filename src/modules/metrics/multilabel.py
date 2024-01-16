@@ -1,6 +1,11 @@
+from typing import Any, List, Optional, Union
+from typing_extensions import Literal
 import torch
+from torch import Tensor
 import torchmetrics
+from torchmetrics import Metric
 from torchmetrics.classification.average_precision import MultilabelAveragePrecision
+from sklearn.metrics import average_precision_score
 
 class cmAP(MultilabelAveragePrecision):
     # implementation from:
@@ -35,7 +40,7 @@ class cmAP(MultilabelAveragePrecision):
 class pcmAP(MultilabelAveragePrecision):
     # https://www.kaggle.com/competitions/birdclef-2023/overview/evaluation
     def __init__(
-            self, 
+            self,
             num_labels: int, 
             padding_factor: int = 5,
             average: str = "macro",
@@ -74,3 +79,20 @@ class T1Accuracy(torchmetrics.Metric):
     def compute(self):
         return self.correct.float() / self.total
 
+class mAP(Metric):
+    def __init__(self, average: Literal['micro', 'macro', 'weighted', 'none'] | None = "macro"):
+        super().__init__()
+        self.average = average
+        self.add_state("preds", default=[], dist_reduce_fx="cat")
+        self.add_state("target", default=[], dist_reduce_fx="cat")
+    
+    def update(self, preds, target):
+        self.preds.append(preds)
+        self.target.append(target)
+    
+    def compute(self) -> Tensor:
+        preds = torch.cat(self.preds)
+        target = torch.cat(self.target)
+        
+        ap = average_precision_score(target, preds, average=self.average)
+        return torch.tensor(ap)

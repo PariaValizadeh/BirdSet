@@ -33,7 +33,10 @@ class MultilabelModule(BaseModule):
             label_counts=label_counts,
             batch_size=batch_size
         )
-
+        
+    def test_model_step(self, batch, batch_idx):
+        return self.model_step(batch, batch_idx)    
+    
     def test_step(self, batch, batch_idx):
         test_loss, preds, targets = self.model_step(batch, batch_idx)
 
