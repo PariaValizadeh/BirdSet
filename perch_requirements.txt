@@ -1,0 +1,10 @@
+ml_collections
+tensorflow
+tensorflow_hub
+
+librosa
+numpy
+
+absl
+etils
+jax
