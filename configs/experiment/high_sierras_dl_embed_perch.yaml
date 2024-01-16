@@ -3,6 +3,7 @@
 defaults:
   - override /datamodule: high_sierras.yaml
   - override /datamodule/transforms: base_transform.yaml
+  - override /datamodule/mapper: xc_bambird_mapper_unlimited.yaml
   - override /module: embedding_multiclass.yaml
   - override /module/network: PerchEmbedding.yaml
   - override /callbacks: default.yaml 
