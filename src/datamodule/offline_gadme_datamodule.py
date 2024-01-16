@@ -27,6 +27,9 @@ class filter():
     def set_mode(self, mode:Literal["train", "valid"]):
         self.mode = mode
     
+    def set_label_column(self, label_column):
+        self.label_column = label_column
+    
     def revert_one_hot(self, entry:list):
         for i in range(len(entry)):
             e = entry[i]
@@ -222,10 +225,11 @@ class OfflineGADMEDataModule(GADMEDataModule):
             dataset = dataset.shuffle(seed=self.dataset_config.seed)
         # print(dataset)
         c_numbers = self.dataset_config.n_classes
-        f = filter(c_numbers, k, "labels", "train")
+        f = filter(c_numbers, k, "ebird_code", "train")
         train = dataset.filter(f, with_indices=True)
         # print(train)
         f.set_mode("valid")
+        f.set_label_column("ebird_code_multilabel")
         valid = dataset.filter(f, with_indices=True)
         # print(valid)
         if len(dataset) != (len(train) + len(valid)):
