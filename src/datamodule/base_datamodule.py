@@ -32,6 +32,8 @@ class DatasetConfig:
     class_weights_loss = None
     class_weights_sampler = None
     classlimit: int | None = None
+    eventlimit: int | None = None
+    
 
 @dataclass
 class LoaderConfig:
