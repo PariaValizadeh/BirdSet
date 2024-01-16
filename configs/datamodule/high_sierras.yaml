@@ -21,8 +21,8 @@ dataset:
   sampling_rate: ${module.network.sampling_rate}
   class_weights_loss: null
   class_weights_sampler: null
-  classlimit: 500 # soft maximum amount of samples per class
-  eventlimit: 5 # soft maximum amount of events from one sample per class
+  classlimit: 10000 # soft maximum amount of samples per class
+  eventlimit: 10000 # soft maximum amount of events from one sample per class
 
 
 
