@@ -1,0 +1,108 @@
+_target_: src.modules.multilabel_module.MultilabelModule
+
+defaults:
+  - _self_
+  - network: BirdNetEmbedding.yaml
+
+task: multilabel
+class_weights_loss: ${datamodule.dataset.class_weights_loss}
+
+# reproduce values from embeddings paper
+# Adam, BCELoss and Sigmoid
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 1e-3
+
+loss:
+  _target_: torch.nn.BCEWithLogitsLoss
+  
+lr_scheduler: 
+  is: null
+
+metrics: 
+  main: 
+    _target_: src.modules.metrics.cmAP
+    num_labels: ${datamodule.dataset.n_classes}
+    sample_threshold: 0
+    average: "macro"
+    thresholds: null
+  val_best: 
+    _target_: "torchmetrics.MaxMetric"
+  additional: 
+    auroc:
+      _target_: "torchmetrics.classification.AUROC"
+      task: "multilabel"
+      num_labels: ${datamodule.dataset.n_classes} 
+      average: "macro"
+      thresholds: null
+    t1acc:
+      _target_: src.modules.metrics.T1Accuracy
+  eval_complete:
+    pcmap:
+      _target_: src.modules.metrics.pcmAP
+      num_labels: ${datamodule.dataset.n_classes}
+      padding_factor: 5
+      average: macro
+      thresholds: null
+    cmap5:
+      _target_: src.modules.metrics.cmAP
+      num_labels: ${datamodule.dataset.n_classes}
+      sample_threshold: 5
+      average: macro
+      thresholds: null
+    map:
+      _target_: src.modules.metrics.multilabel.mAP
+      average: "micro"
+    ap:
+      _target_: torchmetrics.classification.MultilabelAveragePrecision
+      num_labels: ${datamodule.dataset.n_classes}
+      average: "macro"
+      thresholds: null
+      ignore_index: null
+      validate_args: True
+    calibration_error:
+      _target_: torchmetrics.classification.BinaryCalibrationError
+      n_bins: ${datamodule.dataset.n_classes}
+      norm: "l1"
+  calibration:
+    calibration_auroc:
+      _target_: src.modules.metrics.calibrationauc.MultilabelCalibrationAuroc
+      num_labels: ${datamodule.dataset.n_classes}
+      average: "micro"
+      thresholds: null
+      ignore_index: null
+      validate_args: True
+      invert: False
+    # oracle_model_collaborative_accuracy:
+    #   _target_: src.modules.metrics.oracle_model_collaborative_accuracy.OracleModelCollaborativeAccuracy
+    #   alpha_in_percent: 0.05
+    #   num_labels: ${datamodule.dataset.n_classes}
+    # oracle_model_collaborative_auroc:
+    #   _target_: src.modules.metrics.oracle_model_collaborative_accuracy.OracleModelCollaborativeAUROC
+    #   alpha_in_percent: 0.05
+    #   num_labels: ${datamodule.dataset.n_classes}
+    #   average: "macro"
+    #   thresholds: null
+    #   ignore_index: null
+    #   validate_args: True
+    # rejection_accuracy:
+    #   _target_: src.modules.metrics.rejection_rate.RejectionAccuracy
+    #   rejection_rate_in_percent: 0.1
+    # rejection_auroc:
+    #   _target_: src.modules.metrics.rejection_rate.RejectionAUROC
+    #   rejection_rate_in_percent: 0.1
+    #   num_labels: ${datamodule.dataset.n_classes}
+    #   average: "macro"
+    #   thresholds: null
+    #   ignore_index: null
+    #   validate_args: True
+
+output_activation: 
+  _target_: "torch.sigmoid"
+
+logging_params:
+  on_step: False
+  on_epoch: True
+  sync_dist: False
+  prog_bar: True  
+

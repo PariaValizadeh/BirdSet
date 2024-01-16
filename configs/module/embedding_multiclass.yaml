@@ -1,0 +1,76 @@
+_target_: src.modules.base_module.BaseModule
+
+defaults:
+  - _self_
+  - network: BirdNetEmbedding.yaml
+  
+task: multiclass
+class_weights_loss: ${datamodule.dataset.class_weights_loss}
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 1e-3
+
+loss:
+  _target_: torch.nn.CrossEntropyLoss
+  
+lr_scheduler:
+  is: null
+
+metrics: 
+  main: 
+    _target_: "torchmetrics.classification.Accuracy"
+    task: "multiclass"
+    num_classes: ${datamodule.dataset.n_classes}
+    top_k: 1
+  val_best: 
+    _target_: "torchmetrics.MaxMetric"
+  additional: 
+    cmap:
+      _target_: "torchmetrics.classification.AveragePrecision"
+      num_classes: ${datamodule.dataset.n_classes}  
+      task: "multiclass"
+      average: macro
+      thresholds: null
+    balanced_acc: 
+      _target_: src.modules.metrics.BalancedAccuracy
+      num_classes: ${datamodule.dataset.n_classes}  
+    balanced_acc_top5:
+      _target_: src.modules.metrics.BalancedAccuracyTop5
+      num_classes: ${datamodule.dataset.n_classes}  
+    # calibration_auroc:
+    #   _target_: src.modules.metrics.calibrationauc.CalibrationAuroc
+    #   mode: multiclass
+    auroc:
+      _target_: "torchmetrics.classification.AUROC"
+      task: "multiclass"
+      num_classes: ${datamodule.dataset.n_classes} 
+      average: "macro"
+      thresholds: null
+  # eval_complete:
+    # pcmap:
+    #   _target_: src.modules.metrics.pcmAP
+    #   num_labels: ${datamodule.dataset.n_classes}
+    #   padding_factor: 5
+    #   average: macro
+    #   thresholds: null
+    # cmap5:
+    #   _target_: src.modules.metrics.cmAP
+    #   num_labels: ${datamodule.dataset.n_classes}
+    #   sample_threshold: 5
+    #   average: macro
+    #   thresholds: null
+    # map:
+    #   _target_: src.modules.metrics.multilabel.mAP
+    #   average: "micro"
+
+
+output_activation: 
+  _target_: "torch.softmax"
+  dim: 1
+
+logging_params:
+  on_step: False
+  on_epoch: True
+  sync_dist: False
+  prog_bar: True  
