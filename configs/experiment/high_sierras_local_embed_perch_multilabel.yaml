@@ -28,7 +28,7 @@ trainer:
 datamodule:
   _target_: src.datamodule.offline_gadme_datamodule.OfflineGADMEDataModule
   embedding_model_name: ${module.network.model_name}
-  split_mode: 32
+  split_mode: null
   dataset:
     val_split: 0.2
   loaders:

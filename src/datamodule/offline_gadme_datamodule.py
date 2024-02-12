@@ -220,12 +220,12 @@ class OfflineGADMEDataModule(GADMEDataModule):
             else: 
                 return self._create_splits(dataset[list(dataset.keys())[0]])    
     
-    def create_split(self, k, dataset: Dataset, shuffle:bool=False):
+    def create_split(self, k, dataset: Dataset, shuffle:bool=False, label_column_name:str = "labels"):
         if shuffle:
             dataset = dataset.shuffle(seed=self.dataset_config.seed)
         # print(dataset)
         c_numbers = self.dataset_config.n_classes
-        f = filter(c_numbers, k, "ebird_code", "train")
+        f = filter(c_numbers, k, label_column_name, "train")
         train = dataset.filter(f, with_indices=True)
         # print(train)
         f.set_mode("valid")
