@@ -3,6 +3,7 @@ from torch import nn
 from ml_collections import ConfigDict, config_dict
 import numpy as np
 import torch
+import tf
 
 class TfEmbeddingModel(nn.Module):
     def __init__(self, tf_model, embedding_dimension, num_classes, is_embedding:True):
@@ -18,16 +19,21 @@ class TfEmbeddingModel(nn.Module):
     
     def forward_embed(self, input_values, device):
         input_values = input_values.cpu()
-        inference = self.tf_model(input_values)
+        inference = self.run_tf_model(input_values)
         embeddings = inference.embeddings
         embeddings = self.transform_embeddings(embeddings)
         if device is None:
             return torch.from_numpy(embeddings)
         return torch.from_numpy(embeddings).to(device)
     
+    @tf.function
+    def run_tf_model(self, input: tf.tensor):
+        inference = self.tf_model(input)
+        return inference
+    
     def forward_logits(self, input_values, device):
         input_values = input_values.cpu()
-        inference = self.tf_model(input_values)
+        inference = self.run_tf_model(input_values)
         logits = inference.logits
         logits = self.transform_logits(logits)
         logits = torch.from_numpy(logits).to(device)
